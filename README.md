@@ -7,14 +7,6 @@ prices from Willys and Hemköp, two Swedish supermarket chains.
 ![Shopping list with the cheapest product for each ingredient](docs/screenshots/shopping.png)
 ![Recipes](docs/screenshots/recipes.png)
 
-<sub>Recipe photos from Wikimedia Commons:
-[Benreis](https://commons.wikimedia.org/wiki/File:Chilli_sine_carne_Zur_Tanne_Harsdorf.jpg) (CC BY-SA 4.0),
-[Israel_photo_gallery](https://commons.wikimedia.org/wiki/File:Falafel_in_a_pita.jpg) (CC BY-SA 2.0),
-[Kari Sullivan](https://commons.wikimedia.org/wiki/File:Spinach-Chickpea_Curry_(3117324894).jpg) (CC BY 2.0),
-[E4024](https://commons.wikimedia.org/wiki/File:Red_lentil_soup_from_Turkey.jpg) (CC BY-SA 4.0),
-[Andy Li](https://commons.wikimedia.org/wiki/File:Plant_balls_served_with_mashed_potatoes,_peas,_cream_sauce_-_IKEA_Southampton_2025-12-29.jpg) (CC0).
-Store product images are hidden in the screenshot.</sub>
-
 - **Week** – put recipes on the days, change servings, drag between days.
 - **Recipes** – write ingredients as plain text (`500 g mjölig potatis`, `0,5 förp vegobullar`)
   or import from ICA, Köket, Arla and others with a link. While you type you see which
