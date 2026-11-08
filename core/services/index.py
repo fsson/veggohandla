@@ -1,10 +1,10 @@
 """Local index of the chains' range.
 
 One run (the chains' robots.txt: one request per 10 s, only 04:00–08:45 UTC):
-  1. Willys category listings  -> Product + Price(willys)   (~60 requests ≈ 10 min)
-  2. Hemköp category listings  -> Price(hemkop) for the same article codes (~60 requests ≈ 10 min)
+  1. Willys category listings  -> Product + Price(willys)   (a few hundred requests ≈ an hour)
+  2. Hemköp category listings  -> Price(hemkop) for the same article codes (a few hundred requests ≈ an hour)
   3. The product page for products not yet vetted -> ingredient list + vegan?
-     Once per product: the first time ~4,000 requests ≈ 11 hours, i.e. three mornings.
+     Once per product: the first time many thousands of requests, i.e. up to a week of mornings.
      Products matching an ingredient are vetted first, so the shopping list works right away.
 
 When the time window closes the run pauses. Everything fetched is saved and the next run
@@ -21,7 +21,6 @@ on the same article codes – the chains share article codes since both are owne
 from __future__ import annotations
 
 import datetime as dt
-import json
 import logging
 import re
 import threading
@@ -30,7 +29,6 @@ from collections.abc import Callable
 from django.db import close_old_connections, transaction
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.translation import gettext, gettext_noop
 
 from core.domain.vegan import classify
 from core.models import AppSettings, Price, Product, Retailer
@@ -39,33 +37,17 @@ from core.stores.axfood import StoreError
 
 log = logging.getLogger(__name__)
 
-# Top category -> subcategories to include (None = all). Only food used in cooking;
-# meat, fish, cheese, milk, eggs, drinks, sweets and non-food are skipped.
-WILLYS_SECTIONS: dict[str, list[str] | None] = {
-    "frukt-och-gront": None,
-    "vegetariskt": None,
-    "skafferi": None,
-    "mejeri-ost-och-agg": [
-        "havre-soja-risdryck-mm", "filmjolk-och-yoghurt", "matlagning",
-        "smor-margarin-och-jast", "vegetariskt", "allergi-mejeri",
-    ],
-    "brod-och-kakor": ["brod", "knackebrod-och-skorpor", "ris-och-majskakor", "fastfoodbrod"],
-    "fryst": ["potatis", "gronsaker-och-kryddor", "vegetariskt", "frukt-och-bar"],
-    "fardigmat": ["vegetariskt", "farsk-pasta", "saser-grytbaser-och-ovriga-smaksattare"],
-    "glass-godis-och-snacks": ["nyttiga-snacks", "chips-snacks-och-dip"],
-}
-HEMKOP_SECTIONS: dict[str, list[str] | None] = {
-    "frukt-och-gront": None,
-    "vegetariskt": None,
-    "skafferi": None,
-    "mejeri-ost-och-agg": [
-        "vaxtbaserat-mejeri", "smor-margarin-och-jast", "matlagningsmejerier", "yoghurt-och-filmjolk",
-    ],
-    "brod-och-kakor": ["brod", "knackebrod-och-skorpor", "ris-och-majskakor"],
-    "fryst": ["gronsaker", "potatis", "bar-och-frukt", "fardigmat"],
-    "fardigmat": None,
-    "godis-snacks-och-glass": ["notter-och-snacks", "chips-och-ostbagar"],
-}
+# Which categories to crawl: None = everything except the top categories that are meat, fish or
+# non-food (SKIPPED_TOP_WORDS). Dairy, frozen, ready meals, drinks, sweets and so on are crawled
+# whole, because vegan products hide in all of them (vegan cheese, ice cream, pizza ...); the vegan
+# check keeps only what is actually vegan. A dict {top slug: [subcategories] or None} restricts it.
+WILLYS_SECTIONS: dict[str, list[str] | None] | None = None
+HEMKOP_SECTIONS: dict[str, list[str] | None] | None = None
+# Words in a top category's slug that mark it as never vegan or not food.
+SKIPPED_TOP_WORDS = (
+    "kott", "fisk", "fagel", "chark", "skaldjur",  # animal products
+    "hushall", "hygien", "apotek", "skonhet", "kosmetik", "djur", "blommor", "tobak", "tvatt", "barnvard",  # non-food
+)
 
 RECHECK_AFTER = dt.timedelta(days=120)  # ingredient lists rarely change
 RECHECK_PER_RUN = 300
@@ -88,14 +70,20 @@ def normalize(text: str) -> str:
     return " ".join(re.findall(r"[^\W_]+", (text or "").lower().translate(_FOLD)))
 
 
-def resolve_sections(tree: list[dict], sections: dict[str, list[str] | None]) -> list[tuple[str, str]]:
+def resolve_sections(tree: list[dict], sections: dict[str, list[str] | None] | None) -> list[tuple[str, str]]:
     """[(path, 'Top › Sub'), ...] for the selected subcategories."""
     out = []
     for top in tree:
         top_slug = top.get("url", "")
-        if top_slug not in sections:
+        if sections is None:
+            if any(w in top_slug for w in SKIPPED_TOP_WORDS):
+                log.info("Index: skipping category %s", top_slug)
+                continue
+            wanted = None
+        elif top_slug in sections:
+            wanted = sections[top_slug]
+        else:
             continue
-        wanted = sections[top_slug]
         for child in top.get("children") or []:
             slug = child.get("url", "")
             if wanted is None or slug.rsplit("/", 1)[-1] in wanted:
@@ -155,34 +143,17 @@ def reclassify() -> int:
     return changed
 
 
-def _encode(msg: str, params: dict) -> str:
-    return json.dumps({"m": msg, "p": params}, ensure_ascii=False)
-
-
-def progress_text(raw: str) -> str:
-    """Translate a stored progress message into the language that is active now.
-
-    Progress is stored as a message id plus parameters (not as finished text), because
-    it is written by a background run that has no language and read by a web request that has.
-    """
-    try:
-        data = json.loads(raw)
-        return gettext(data["m"]) % data["p"]
-    except (ValueError, KeyError, TypeError):
-        return raw or ""  # older plain-text value
-
-
-def _set_progress(msg: str, progress: Progress | None = None, **params) -> None:
-    """Store a progress message (use gettext_noop for `msg`) and report it to a console callback."""
-    AppSettings.objects.filter(pk=1).update(index_progress=_encode(msg, params), index_heartbeat=timezone.now())
+def _set_progress(text: str, progress: Progress | None = None) -> None:
+    """Store a progress message and report it to a console callback."""
+    AppSettings.objects.filter(pk=1).update(index_progress=text, index_heartbeat=timezone.now())
     if progress:
-        progress(gettext(msg) % params)
+        progress(text)
 
 
-def _finish(msg: str, **params) -> str:
-    """Store the final summary of a run and return it in the active language."""
-    AppSettings.objects.filter(pk=1).update(index_progress=_encode(msg, params))
-    return gettext(msg) % params
+def _finish(text: str) -> str:
+    """Store the final summary of a run and return it."""
+    AppSettings.objects.filter(pk=1).update(index_progress=text)
+    return text
 
 
 class AlreadyRunning(Exception):
@@ -221,8 +192,7 @@ def _crawl(retailer: str, sections, now, progress, only_known: bool) -> tuple[in
     slugs = resolve_sections(tree, sections)
     known = set(Product.objects.values_list("code", flat=True)) if only_known else set()
     for i, (slug, name) in enumerate(slugs, 1):
-        _set_progress(gettext_noop("%(chain)s: %(name)s (%(i)s/%(n)s)"), progress,
-                      chain=Retailer(retailer).label, name=name, i=i, n=len(slugs))
+        _set_progress(f"{Retailer(retailer).label}: {name} ({i}/{len(slugs)})", progress)
         try:
             # Fetch first, write afterwards: the pages of a category take 10 s each, and the
             # database must not be locked for the web app while we wait.
@@ -277,7 +247,7 @@ def run(progress: Progress | None = None, details: bool = True, force_listings: 
         reclassify()
         if listings_fresh(settings, now) and not force_listings:
             listed = settings.listed_at
-            _set_progress(gettext_noop("Listningarna är färska – fortsätter granskningen"), progress)
+            _set_progress("Listningarna är färska – fortsätter granskningen", progress)
         else:
             n_w, err_w = _crawl("willys", WILLYS_SECTIONS, now, progress, only_known=False)
             if not err_w:
@@ -300,8 +270,7 @@ def run(progress: Progress | None = None, details: bool = True, force_listings: 
             errors = 0
             for i, pk in enumerate(todo, 1):
                 product = Product.objects.get(pk=pk)
-                _set_progress(gettext_noop("Granskar ingredienser: %(i)s av %(n)s"),
-                              progress if i == 1 or i % 25 == 0 else None, i=i, n=len(todo))
+                _set_progress(f"Granskar ingredienser: {i} av {len(todo)}", progress if i == 1 or i % 25 == 0 else None)
                 try:
                     apply_details(product, axfood.fetch_details("willys", product.code))
                     checked += 1
@@ -312,16 +281,10 @@ def run(progress: Progress | None = None, details: bool = True, force_listings: 
                         raise
         vegan = Product.objects.filter(vegan=True, seen_at__gte=listed).count()
         AppSettings.objects.filter(pk=1).update(indexed_at=timezone.now())
-        return _finish(
-            gettext_noop("%(w)s varor hos Willys, %(h)s med pris hos Hemköp, %(c)s granskade, %(v)s veganska."),
-            w=n_w, h=n_h, c=checked, v=vegan,
-        )
+        return _finish(f"{n_w} varor hos Willys, {n_h} med pris hos Hemköp, {checked} granskade, {vegan} veganska.")
     except axfood.OutsideVisitTime:
         left = Product.objects.filter(checked_at__isnull=True).count()
-        return _finish(
-            gettext_noop("Pausad: kedjornas tidsfönster stängde. %(c)s granskade nu, %(left)s kvar – fortsätter nästa körning."),
-            c=checked, left=left,
-        )
+        return _finish(f"Pausad: kedjornas tidsfönster stängde. {checked} granskade nu, {left} kvar – fortsätter nästa körning.")
     except StoreError as e:
         AppSettings.objects.filter(pk=1).update(index_error=str(e)[:300])
         raise

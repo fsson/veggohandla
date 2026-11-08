@@ -1,13 +1,13 @@
-{% extends "core/base.html" %}{% load vl i18n %}
-{% block title %}{% blocktrans %}Vecka {{ week_no }}{% endblocktrans %} – Veggohandla{% endblock %}
+{% extends "core/base.html" %}{% load vl %}
+{% block title %}Vecka {{ week_no }} – Veggohandla{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>{% trans "Veckan" %}</h1><p class="sub">{% trans "Lägg recept på dagarna – inköpslistan räknas fram automatiskt." %}</p></div>
+  <div><h1>Veckan</h1><p class="sub">Lägg recept på dagarna – inköpslistan räknas fram automatiskt.</p></div>
   <div class="week-nav">
-    {% if not is_current %}<a class="btn sm ghost" href="{% url 'planner_current' %}">{% trans "Denna vecka" %}</a>{% endif %}
-    <a class="btn icon-only ghost" href="{% url 'planner' prev %}" aria-label="{% trans 'Föregående vecka' %}">{% include "core/icon.html" with name="left" %}</a>
-    <div class="label"><strong>{% blocktrans %}Vecka {{ week_no }}{% endblocktrans %}</strong><span class="small muted">{{ range }}</span></div>
-    <a class="btn icon-only ghost" href="{% url 'planner' next %}" aria-label="{% trans 'Nästa vecka' %}">{% include "core/icon.html" with name="right" %}</a>
+    {% if not is_current %}<a class="btn sm ghost" href="{% url 'planner_current' %}">Denna vecka</a>{% endif %}
+    <a class="btn icon-only ghost" href="{% url 'planner' prev %}" aria-label="Föregående vecka">{% include "core/icon.html" with name="left" %}</a>
+    <div class="label"><strong>Vecka {{ week_no }}</strong><span class="small muted">{{ range }}</span></div>
+    <a class="btn icon-only ghost" href="{% url 'planner' next %}" aria-label="Nästa vecka">{% include "core/icon.html" with name="right" %}</a>
   </div>
 </div>
 
@@ -22,13 +22,13 @@
 </div>
 
 <div class="week-foot">
-  <p class="small muted">{% trans "Dra en måltid för att flytta den. Håll muspekaren över den för att ändra portioner." %}</p>
+  <p class="small muted">Dra en måltid för att flytta den. Håll muspekaren över den för att ändra portioner.</p>
   <div class="row">
     {% if prev_has_meals %}
-    <form method="post" action="{% url 'week_copy' week.isoformat %}" data-confirm="{% trans 'Kopiera förra veckans måltider till den här veckan?' %}">{% csrf_token %}<button class="btn sm">{% trans "Kopiera förra veckan" %}</button></form>
+    <form method="post" action="{% url 'week_copy' week.isoformat %}" data-confirm="Kopiera förra veckans måltider till den här veckan?">{% csrf_token %}<button class="btn sm">Kopiera förra veckan</button></form>
     {% endif %}
     {% if meal_count %}
-    <form method="post" action="{% url 'week_clear' week.isoformat %}" data-confirm="{% trans 'Ta bort alla måltider den här veckan?' %}">{% csrf_token %}<button class="btn sm ghost danger">{% trans "Töm veckan" %}</button></form>
+    <form method="post" action="{% url 'week_clear' week.isoformat %}" data-confirm="Ta bort alla måltider den här veckan?">{% csrf_token %}<button class="btn sm ghost danger">Töm veckan</button></form>
     {% endif %}
   </div>
 </div>

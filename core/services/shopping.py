@@ -10,7 +10,6 @@ import datetime as dt
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from django.utils.translation import gettext, gettext_lazy, pgettext_lazy
 
 from core.domain.aggregate import AggregatedItem, Line, aggregate, scale
 from core.domain.units import MASS, conversion_factor, to_base
@@ -26,17 +25,8 @@ from core.models import (
 from core.services import catalog
 from core.services.catalog import Offer
 
-# Lazy, so they follow the language active when they are rendered.
-WEEKDAYS = [
-    gettext_lazy("Måndag"), gettext_lazy("Tisdag"), gettext_lazy("Onsdag"), gettext_lazy("Torsdag"),
-    gettext_lazy("Fredag"), gettext_lazy("Lördag"), gettext_lazy("Söndag"),
-]
-WEEKDAYS_SHORT = [
-    pgettext_lazy("weekday abbreviation", "Mån"), pgettext_lazy("weekday abbreviation", "Tis"),
-    pgettext_lazy("weekday abbreviation", "Ons"), pgettext_lazy("weekday abbreviation", "Tor"),
-    pgettext_lazy("weekday abbreviation", "Fre"), pgettext_lazy("weekday abbreviation", "Lör"),
-    pgettext_lazy("weekday abbreviation", "Sön"),
-]
+WEEKDAYS = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
+WEEKDAYS_SHORT = ["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"]
 
 
 @dataclass
@@ -114,7 +104,7 @@ class ShoppingList:
                 sum((r.other.cost for r in rows), Decimal(0)), len(rows))
 
     def as_text(self) -> str:
-        out = [gettext("Inköpslista v. %(week)s") % {"week": self.week.isocalendar().week}]
+        out = [f"Inköpslista v. {self.week.isocalendar().week}"]
         for g in self.groups:
             out.append(f"\n{g.name}")
             for r in g.rows:
@@ -123,7 +113,7 @@ class ShoppingList:
                 else:
                     out.append(f"- {r.name}" + (f" – {r.quantity}" if r.quantity else ""))
         if self.staples:
-            out.append("\n" + gettext("Kolla hemma"))
+            out.append("\n" + "Kolla hemma")
             out += [f"- {r.name}" for r in self.staples]
         return "\n".join(out)
 
@@ -172,9 +162,7 @@ def build(week: dt.date, retailer: str) -> ShoppingList:
     items = aggregate(lines, {i: ing.facts() for i, ing in ingredients.items()})
     states = {s.ingredient_id: s for s in ShoppingItemState.objects.filter(week=week)}
 
-    # Section names are stored in Swedish; gettext maps them to the active language
-    # (the names are marked for extraction in seed_data.py).
-    groups: dict[int, Group] = {c.id: Group(gettext(c.name), c.icon) for c in Category.objects.all()}
+    groups: dict[int, Group] = {c.id: Group(c.name, c.icon) for c in Category.objects.all()}
     staples: list[Row] = []
     removed: list[Row] = []
 
@@ -196,7 +184,7 @@ def build(week: dt.date, retailer: str) -> ShoppingList:
     ordered = [g for g in groups.values() if g.rows]
     extras = list(ExtraItem.objects.filter(week=week).select_related("product"))
     if extras:
-        group = Group(gettext("Extra varor"), "➕")
+        group = Group("Extra varor", "➕")
         for x in extras:
             group.rows.append(_extra_row(x, retailer))
         ordered.append(group)

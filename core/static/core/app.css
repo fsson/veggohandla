@@ -80,8 +80,6 @@ button { font: inherit; color: inherit; }
 .topnav a .icon { width: 17px; height: 17px; }
 .topnav a:hover { background: var(--surface-2); color: var(--text); }
 .topnav a.active { background: var(--accent-soft); color: var(--accent-strong); }
-.topbar .lang { margin-left: auto; }
-.topbar .lang button { padding: 3px 11px; font-size: .8rem; letter-spacing: .03em; }
 
 /* ------------------------------------------------------------ headings */
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }

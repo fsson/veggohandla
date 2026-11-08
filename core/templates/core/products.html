@@ -1,16 +1,16 @@
-{% extends "core/base.html" %}{% load vl i18n %}
-{% block title %}{% trans "Sortiment" %} – Veggohandla{% endblock %}
+{% extends "core/base.html" %}{% load vl %}
+{% block title %}Sortiment – Veggohandla{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>{% trans "Sortiment" %}</h1><p class="sub">{% trans "Veganska varor hos Willys och Hemköp, granskade mot ingredienslistan." %}</p></div>
+  <div><h1>Sortiment</h1><p class="sub">Veganska varor hos Willys och Hemköp, granskade mot ingredienslistan.</p></div>
 </div>
 
 <div class="card" id="index-status" style="margin-bottom:20px">{% include "core/partials/index_status.html" %}</div>
 
 <div class="with-aside left">
   <aside class="aside">
-    <nav class="tree" aria-label="{% trans 'Kategorier' %}">
-      <a href="{% url 'products' %}{% if q %}?q={{ q|urlencode }}{% endif %}" class="node{% if not category %} active{% endif %}"><span>{% trans "Alla varor" %}</span><span class="n">{{ total_vegan }}</span></a>
+    <nav class="tree" aria-label="Kategorier">
+      <a href="{% url 'products' %}{% if q %}?q={{ q|urlencode }}{% endif %}" class="node{% if not category %} active{% endif %}"><span>Alla varor</span><span class="n">{{ total_vegan }}</span></a>
       {% for top in tree %}
       <details{% if top.slug == open_top %} open{% endif %}>
         <summary class="node{% if category == top.slug %} active{% endif %}">
@@ -18,7 +18,7 @@
           <span class="grow">{{ top.name }}</span><span class="n">{{ top.count }}</span>
         </summary>
         <div class="children">
-          <a href="?kategori={{ top.slug|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="node{% if category == top.slug %} active{% endif %}"><span>{% blocktrans with name=top.name|lower %}Allt i {{ name }}{% endblocktrans %}</span></a>
+          <a href="?kategori={{ top.slug|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="node{% if category == top.slug %} active{% endif %}"><span>Allt i {{ top.name|lower }}</span></a>
           {% for c in top.children %}
           <a href="?kategori={{ c.slug|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="node{% if category == c.slug %} active{% endif %}"><span>{{ c.name }}</span><span class="n">{{ c.count }}</span></a>
           {% endfor %}
@@ -28,9 +28,9 @@
     </nav>
   </aside>
   <div>
-    {% if current %}<h2 style="margin-bottom:12px">{{ current.name }} <span class="muted small">{% blocktrans with n=current.count %}{{ n }} varor{% endblocktrans %}</span></h2>{% endif %}
+    {% if current %}<h2 style="margin-bottom:12px">{{ current.name }} <span class="muted small">{{ current.count }} varor</span></h2>{% endif %}
     <form class="toolbar" hx-get="{% url 'products' %}" hx-target="#product-table" hx-trigger="input changed delay:250ms" hx-push-url="true">
-      <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Sök vara eller märke' %}" aria-label="{% trans 'Sök vara' %}"></div>
+      <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="Sök vara eller märke" aria-label="Sök vara"></div>
       {% if category %}<input type="hidden" name="kategori" value="{{ category }}">{% endif %}
     </form>
     <div id="product-table">{% include "core/partials/product_table.html" %}</div>

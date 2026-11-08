@@ -19,7 +19,6 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from django.db.models import Prefetch, Q, QuerySet
-from django.utils.translation import gettext
 
 from core.domain.aggregate import AggregatedItem, merge_with
 from core.domain.units import MASS, conversion_factor, format_quantity
@@ -123,8 +122,8 @@ class Offer:
     def amount_text(self) -> str:
         if self.product.price_per_kg:
             if self.kg:
-                return gettext("ca %(amount)s") % {"amount": format_quantity(self.kg * 1000, MASS)}
-            return gettext("lösvikt")
+                return f"ca {format_quantity(self.kg * 1000, MASS)}"
+            return "lösvikt"
         return f"{self.packages} st" if self.packages else ""
 
 

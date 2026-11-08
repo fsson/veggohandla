@@ -1,18 +1,4 @@
 import pytest
-from django.conf import settings
-from django.utils import translation
-
-
-@pytest.fixture(autouse=True)
-def _default_language():
-    """Every test starts (and ends) in the default language.
-
-    A request through the test client activates the language it asks for and Django does
-    not reset it afterwards, so without this an English request would leak into later tests.
-    """
-    translation.activate(settings.LANGUAGE_CODE)
-    yield
-    translation.activate(settings.LANGUAGE_CODE)
 
 
 @pytest.fixture(autouse=True)

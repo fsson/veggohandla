@@ -1,5 +1,5 @@
-{% load static i18n %}<!doctype html>
-<html lang="{{ LANGUAGE_CODE }}">
+{% load static %}<!doctype html>
+<html lang="sv">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,17 +16,12 @@
   <header class="topbar">
     <div class="container">
       <a class="brand" href="{% url 'planner_current' %}"><span class="brand-mark">{% include "core/icon.html" with name="leaf" %}</span><span>Veggo<em>handla</em></span></a>
-      <nav class="topnav" aria-label="{% trans 'Huvudmeny' %}">
-        <a href="{% url 'planner_current' %}" class="{% if nav_section == 'planner' %}active{% endif %}">{% include "core/icon.html" with name="calendar" %}{% trans "Veckan" %}</a>
-        <a href="{% url 'recipe_list' %}" class="{% if nav_section == 'recipes' %}active{% endif %}">{% include "core/icon.html" with name="book" %}{% trans "Recept" %}</a>
-        <a href="{% url 'shopping_current' %}" class="{% if nav_section == 'shopping' %}active{% endif %}">{% include "core/icon.html" with name="cart" %}{% trans "Handla" %}</a>
-        <a href="{% url 'products' %}" class="{% if nav_section == 'products' %}active{% endif %}">{% include "core/icon.html" with name="store" %}{% trans "Sortiment" %}</a>
+      <nav class="topnav" aria-label="Huvudmeny">
+        <a href="{% url 'planner_current' %}" class="{% if nav_section == 'planner' %}active{% endif %}">{% include "core/icon.html" with name="calendar" %}Veckan</a>
+        <a href="{% url 'recipe_list' %}" class="{% if nav_section == 'recipes' %}active{% endif %}">{% include "core/icon.html" with name="book" %}Recept</a>
+        <a href="{% url 'shopping_current' %}" class="{% if nav_section == 'shopping' %}active{% endif %}">{% include "core/icon.html" with name="cart" %}Handla</a>
+        <a href="{% url 'products' %}" class="{% if nav_section == 'products' %}active{% endif %}">{% include "core/icon.html" with name="store" %}Sortiment</a>
       </nav>
-      <form class="segmented lang" action="{% url 'set_language' %}" method="post" aria-label="{% trans 'Språk' %}">{% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-        <button name="language" value="sv" lang="sv" title="Svenska" class="{% if LANGUAGE_CODE == 'sv' %}active{% endif %}">SV</button>
-        <button name="language" value="en" lang="en" title="English" class="{% if LANGUAGE_CODE == 'en' %}active{% endif %}">EN</button>
-      </form>
     </div>
   </header>
 
@@ -39,6 +34,6 @@
     {% block content %}{% endblock %}
   </main>
 
-  <dialog id="dialog" aria-label="{% trans 'Dialog' %}"><div id="dialog-content"></div></dialog>
+  <dialog id="dialog" aria-label="Dialog"><div id="dialog-content"></div></dialog>
 </body>
 </html>

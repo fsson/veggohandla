@@ -1,32 +1,32 @@
-{% load vl i18n %}<div class="item" id="row-{{ row.key }}">
+{% load vl %}<div class="item" id="row-{{ row.key }}">
   <div class="need">
     {% if row.extra_id %}
-      <div class="name">{% trans "Extra" %}</div>
+      <div class="name">Extra</div>
       <div class="qty row" style="gap:2px">
-        <button class="btn icon-only xs ghost" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "minus"}' aria-label="{% trans 'Färre' %}">{% include "core/icon.html" with name="minus" %}</button>
+        <button class="btn icon-only xs ghost" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "minus"}' aria-label="Färre">{% include "core/icon.html" with name="minus" %}</button>
         <span>{{ row.quantity }}</span>
-        <button class="btn icon-only xs ghost" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "plus"}' aria-label="{% trans 'Fler' %}">{% include "core/icon.html" with name="plus" %}</button>
+        <button class="btn icon-only xs ghost" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "plus"}' aria-label="Fler">{% include "core/icon.html" with name="plus" %}</button>
       </div>
     {% else %}
       <div class="name">{{ row.name }}</div>
-      <div class="qty">{{ row.quantity|default:_("efter smak") }}</div>
+      <div class="qty">{{ row.quantity|default:"efter smak" }}</div>
       <div class="from" title="{% for s in row.sources %}{{ s.day }}: {{ s.recipe_name }}{% if not forloop.last %}, {% endif %}{% endfor %}">{% for s in row.sources %}{{ s.day }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
     {% endif %}
   </div>
 
   {% if row.offer %}{% with p=row.offer.product %}
-  <a class="prod" href="{{ p|product_url:list.retailer }}" target="_blank" rel="noopener" title="{% blocktrans with chain=list.retailer_label %}Öppna hos {{ chain }}{% endblocktrans %}">
+  <a class="prod" href="{{ p|product_url:list.retailer }}" target="_blank" rel="noopener" title="Öppna hos {{ list.retailer_label }}">
     {% if p.image_url %}<img class="thumbnail" src="{{ p.image_url }}" alt="" loading="lazy">{% else %}<span class="thumbnail">–</span>{% endif %}
     <span class="txt">
       <span class="pname trunc" style="display:block">{{ p.name }}</span>
       <span class="pmeta">{% if p.brand %}{{ p.brand }}{% if p.size_text %} · {% endif %}{% endif %}{{ p.size_text }}
         {% if row.offer.promo %}<span class="badge promo">{{ row.offer.price.promo_text }}</span>{% endif %}
-        {% if row.chosen and not row.extra_id %}<span class="badge green">{% trans "ditt val" %}</span>{% endif %}
+        {% if row.chosen and not row.extra_id %}<span class="badge green">ditt val</span>{% endif %}
       </span>
     </span>
   </a>
   {% endwith %}{% else %}
-  <div class="prod none">{% if row.extra_id %}{% blocktrans with chain=list.retailer_label %}Finns inte hos {{ chain }}{% endblocktrans %}{% else %}{% trans "Ingen vegansk vara hittades" %}{% endif %}</div>
+  <div class="prod none">{% if row.extra_id %}Finns inte hos {{ list.retailer_label }}{% else %}Ingen vegansk vara hittades{% endif %}</div>
   {% endif %}
 
   <div class="buy">{% if row.offer %}{{ row.offer.amount_text }}{% endif %}</div>
@@ -36,10 +36,10 @@
 
   <div class="actions">
     {% if row.extra_id %}
-    <button class="btn icon-only sm ghost danger hover-only" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "delete"}' aria-label="{% blocktrans with name=row.name %}Ta bort {{ name }}{% endblocktrans %}">{% include "core/icon.html" with name="trash" %}</button>
+    <button class="btn icon-only sm ghost danger hover-only" hx-post="{% url 'extra_item' row.extra_id %}" hx-vals='{"action": "delete"}' aria-label="Ta bort {{ row.name }}">{% include "core/icon.html" with name="trash" %}</button>
     {% else %}
-    <button class="btn xs ghost swap" hx-get="{% url 'shopping_choose' week.isoformat row.ingredient_id %}" hx-target="#dialog-content" title="{% blocktrans with n=row.options %}{{ n }} matchande varor{% endblocktrans %}" aria-label="{% blocktrans with name=row.name %}Byt vara för {{ name }}{% endblocktrans %}">{% trans "Byt" %}</button>
-    <button class="btn icon-only sm ghost hover-only" hx-post="{% url 'shopping_item' week.isoformat row.ingredient_id %}" hx-vals='{"action": "remove"}' title="{% trans 'Har hemma' %}" aria-label="{% blocktrans with name=row.name %}Har hemma: {{ name }}{% endblocktrans %}">{% include "core/icon.html" with name="x" %}</button>
+    <button class="btn xs ghost swap" hx-get="{% url 'shopping_choose' week.isoformat row.ingredient_id %}" hx-target="#dialog-content" title="{{ row.options }} matchande varor" aria-label="Byt vara för {{ row.name }}">Byt</button>
+    <button class="btn icon-only sm ghost hover-only" hx-post="{% url 'shopping_item' week.isoformat row.ingredient_id %}" hx-vals='{"action": "remove"}' title="Har hemma" aria-label="Har hemma: {{ row.name }}">{% include "core/icon.html" with name="x" %}</button>
     {% endif %}
   </div>
 </div>

@@ -8,30 +8,27 @@ typing a recipe in the app. The tests check that every line matches an ingredien
 Names, aliases and recipe text are Swedish on purpose: they are app content for Swedish stores.
 """
 
-from django.utils.translation import gettext_noop
-
-# Section names are marked with gettext_noop so they get extracted for translation (the stored name is Swedish).
 # (name, icon, order, Willys categories where the section's ingredients look for products)
 # The order follows a typical path through the store.
 CATEGORIES = [
-    (gettext_noop("Frukt & grönt"), "🥕", 10, "frukt-och-gront"),
-    (gettext_noop("Bröd"), "🍞", 20, "brod-och-kakor"),
-    (gettext_noop("Kylt & mejerialternativ"), "🥛", 30, "mejeri-ost-och-agg vegetariskt/palagg-och-ost fardigmat"),
-    (gettext_noop("Veganskt"), "🌱", 40, "vegetariskt fryst/vegetariskt mejeri-ost-och-agg/vegetariskt fardigmat/vegetariskt"),
-    (gettext_noop("Frys"), "❄️", 50, "fryst"),
-    (gettext_noop("Pasta, ris & torrvaror"), "🍝", 60,
+    ("Frukt & grönt", "🥕", 10, "frukt-och-gront"),
+    ("Bröd", "🍞", 20, "brod-och-kakor"),
+    ("Kylt & mejerialternativ", "🥛", 30, "mejeri-ost-och-agg vegetariskt/palagg-och-ost fardigmat"),
+    ("Veganskt", "🌱", 40, "vegetariskt fryst/vegetariskt mejeri-ost-och-agg/vegetariskt fardigmat/vegetariskt"),
+    ("Frys", "❄️", 50, "fryst"),
+    ("Pasta, ris & torrvaror", "🍝", 60,
      "skafferi/pasta-ris-och-matgryn skafferi/torra-baljvaxter skafferi/flingor-gryner-och-musli "
      "skafferi/asien skafferi/texmex skafferi/glutenfritt"),
-    (gettext_noop("Konserver & burkar"), "🥫", 70,
+    ("Konserver & burkar", "🥫", 70,
      "skafferi/konserver-och-burkar skafferi/sylt-mos-och-marmelad skafferi/texmex skafferi/asien"),
-    (gettext_noop("Bakning"), "🥣", 80, "skafferi/bakning"),
-    (gettext_noop("Kryddor"), "🧂", 90, "skafferi/kryddor-och-smaksattare skafferi/asien"),
-    (gettext_noop("Oljor, såser & smaksättare"), "🫙", 100,
+    ("Bakning", "🥣", 80, "skafferi/bakning"),
+    ("Kryddor", "🧂", 90, "skafferi/kryddor-och-smaksattare skafferi/asien"),
+    ("Oljor, såser & smaksättare", "🫙", 100,
      "skafferi/olja-och-vinager skafferi/kryddor-och-smaksattare skafferi/asien skafferi/texmex "
      "skafferi/oliver-och-delikatesser fardigmat/saser-grytbaser-och-ovriga-smaksattare"),
-    (gettext_noop("Nötter & frön"), "🥜", 110,
+    ("Nötter & frön", "🥜", 110,
      "skafferi/bakning skafferi/torkad-frukt glass-godis-och-snacks skafferi/flingor-gryner-och-musli"),
-    (gettext_noop("Övrigt"), "📦", 999, ""),
+    ("Övrigt", "📦", 999, ""),
 ]
 
 

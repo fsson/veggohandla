@@ -1,9 +1,9 @@
-{% load i18n %}<div class="dialog-head">
-  <div class="spread"><h2>{{ day_label }}</h2><button class="btn icon-only ghost" data-close-dialog aria-label="{% trans 'Stäng' %}">{% include "core/icon.html" with name="x" %}</button></div>
+<div class="dialog-head">
+  <div class="spread"><h2>{{ day_label }}</h2><button class="btn icon-only ghost" data-close-dialog aria-label="Stäng">{% include "core/icon.html" with name="x" %}</button></div>
   <div class="row">
     <div class="searchbox grow">{% include "core/icon.html" with name="search" %}
-      <input type="search" name="q" placeholder="{% trans 'Sök recept eller ingrediens' %}" aria-label="{% trans 'Sök recept' %}" hx-get="{% url 'recipe_picker' %}?date={{ date.isoformat }}" hx-trigger="input changed delay:200ms" hx-target="#picker-results"></div>
-    <label class="row small muted nowrap">{% trans "Portioner" %} <input id="picker-servings" type="number" name="servings" min="1" max="99" value="{{ default_servings }}" style="width:70px"></label>
+      <input type="search" name="q" placeholder="Sök recept eller ingrediens" aria-label="Sök recept" hx-get="{% url 'recipe_picker' %}?date={{ date.isoformat }}" hx-trigger="input changed delay:200ms" hx-target="#picker-results"></div>
+    <label class="row small muted nowrap">Portioner <input id="picker-servings" type="number" name="servings" min="1" max="99" value="{{ default_servings }}" style="width:70px"></label>
   </div>
 </div>
 <div class="dialog-body" id="picker-results">{% include "core/partials/picker_results.html" %}</div>

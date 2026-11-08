@@ -51,8 +51,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",  # serves /static/ in production, no collectstatic step
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.locale.LocaleMiddleware",
-    "core.middleware.DecimalSeparatorMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -70,7 +68,6 @@ TEMPLATES = [
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
-                "django.template.context_processors.i18n",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context.nav",
@@ -90,11 +87,9 @@ DATABASES = {
     }
 }
 
-# Swedish is the source language of all texts (the msgids); English is a translation in
-# locale/en. The language follows the browser (Accept-Language) unless chosen in the UI.
+# The interface is Swedish only (no translation catalogue). USE_I18N stays on so Django's own
+# Swedish month/weekday names and form messages are used.
 LANGUAGE_CODE = "sv"
-LANGUAGES = [("sv", "Svenska"), ("en", "English")]
-LOCALE_PATHS = [BASE_DIR / "locale"]
 TIME_ZONE = "Europe/Stockholm"
 USE_I18N = True
 USE_TZ = True

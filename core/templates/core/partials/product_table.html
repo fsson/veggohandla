@@ -1,7 +1,7 @@
-{% load vl i18n %}{% if rows %}
+{% load vl %}{% if rows %}
 <div class="card flush">
 <table class="data-table">
-  <thead><tr><th></th><th>{% trans "Vara" %}</th><th>{% trans "Kategori" %}</th><th class="num">Willys</th><th class="num">Hemköp</th><th>{% trans "Varför vegansk" %}</th></tr></thead>
+  <thead><tr><th></th><th>Vara</th><th>Kategori</th><th class="num">Willys</th><th class="num">Hemköp</th><th>Varför vegansk</th></tr></thead>
   <tbody>
   {% for p, w, h in rows %}
   <tr>
@@ -16,7 +16,7 @@
   </tbody>
 </table>
 </div>
-{% if shown >= 300 %}<p class="small muted" style="margin-top:10px">{% trans "Visar de första 300. Sök eller välj en kategori för att se fler." %}</p>{% endif %}
+{% if shown >= 300 %}<p class="small muted" style="margin-top:10px">Visar de första 300. Sök eller välj en kategori för att se fler.</p>{% endif %}
 {% else %}
-<div class="card empty"><p>{% if q %}{% blocktrans %}Inga veganska varor matchar ”{{ q }}”.{% endblocktrans %}{% else %}{% trans "Inga varor än." %}{% endif %}</p></div>
+<div class="card empty"><p>{% if q %}Inga veganska varor matchar ”{{ q }}”.{% else %}Inga varor än.{% endif %}</p></div>
 {% endif %}

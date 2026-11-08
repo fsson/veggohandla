@@ -13,7 +13,6 @@ ingredient's package size.
 
 from __future__ import annotations
 
-import contextvars
 
 from dataclasses import dataclass
 from decimal import ROUND_CEILING, Decimal
@@ -160,19 +159,14 @@ def packages_needed(amount: Decimal, package_amount: Decimal) -> int:
 
 # ---------------------------------------------------------------- formatting
 
-# Decimal separator used when formatting numbers. Swedish by default; the web layer sets
-# it per request from the active language (see core/middleware.py).
-decimal_separator: contextvars.ContextVar[str] = contextvars.ContextVar("decimal_separator", default=",")
-
-
 def format_number(value: Decimal, max_decimals: int = 2) -> str:
-    """Format a number without unnecessary zeros: 1,5 · 0,25 · 2 (or 1.5 · 0.25 · 2 in English)."""
+    """Format a number without unnecessary zeros: 1,5 · 0,25 · 2 (decimal comma)."""
     q = Decimal(1).scaleb(-max_decimals)
     v = value.quantize(q).normalize()
     if v == v.to_integral():
         v = v.quantize(Decimal(1))
     text = format(v, "f")
-    return text.replace(".", decimal_separator.get())
+    return text.replace(".", ",")
 
 
 def best_display(amount: Decimal, dimension: str, prefer_unit: str | None = None) -> tuple[Decimal, str]:

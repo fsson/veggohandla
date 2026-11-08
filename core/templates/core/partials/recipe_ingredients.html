@@ -1,21 +1,21 @@
-{% load vl i18n %}
+{% load vl %}
 <div class="card-head">
-  <h2>{% trans "Ingredienser" %}</h2>
-  <div class="servings" role="group" aria-label="{% trans 'Portioner' %}">
-    <button class="btn icon-only sm ghost" hx-get="{% url 'recipe_detail' recipe.pk %}?portioner={{ servings|add:'-1' }}" hx-target="#recipe-ingredients" hx-push-url="true" {% if servings <= 1 %}disabled{% endif %} aria-label="{% trans 'Färre portioner' %}">{% include "core/icon.html" with name="minus" %}</button>
-    <span class="count">{% blocktrans %}{{ servings }} port.{% endblocktrans %}</span>
-    <button class="btn icon-only sm ghost" hx-get="{% url 'recipe_detail' recipe.pk %}?portioner={{ servings|add:'1' }}" hx-target="#recipe-ingredients" hx-push-url="true" aria-label="{% trans 'Fler portioner' %}">{% include "core/icon.html" with name="plus" %}</button>
+  <h2>Ingredienser</h2>
+  <div class="servings" role="group" aria-label="Portioner">
+    <button class="btn icon-only sm ghost" hx-get="{% url 'recipe_detail' recipe.pk %}?portioner={{ servings|add:'-1' }}" hx-target="#recipe-ingredients" hx-push-url="true" {% if servings <= 1 %}disabled{% endif %} aria-label="Färre portioner">{% include "core/icon.html" with name="minus" %}</button>
+    <span class="count">{{ servings }} port.</span>
+    <button class="btn icon-only sm ghost" hx-get="{% url 'recipe_detail' recipe.pk %}?portioner={{ servings|add:'1' }}" hx-target="#recipe-ingredients" hx-push-url="true" aria-label="Fler portioner">{% include "core/icon.html" with name="plus" %}</button>
   </div>
 </div>
 <table class="ing-table">
   {% for line in lines %}
   <tr>
-    <td>{{ line.text }}{% if line.ingredient.is_staple %} <span class="badge">{% trans "basvara" %}</span>{% endif %}</td>
-    <td class="product">{% if line.offer %}<a href="{{ line.offer.product|product_url:retailer }}" target="_blank" rel="noopener">{{ line.offer.product.name }} {{ line.offer.product.size_text }}</a>{% elif not line.ingredient.is_staple and line.ingredient.in_shopping_list %}<span class="faint">{% trans "ingen vara hittad" %}</span>{% endif %}</td>
+    <td>{{ line.text }}{% if line.ingredient.is_staple %} <span class="badge">basvara</span>{% endif %}</td>
+    <td class="product">{% if line.offer %}<a href="{{ line.offer.product|product_url:retailer }}" target="_blank" rel="noopener">{{ line.offer.product.name }} {{ line.offer.product.size_text }}</a>{% elif not line.ingredient.is_staple and line.ingredient.in_shopping_list %}<span class="faint">ingen vara hittad</span>{% endif %}</td>
     <td class="cost">{% if line.cost is not None %}{{ line.cost|kr }}{% endif %}</td>
   </tr>
-  {% empty %}<tr><td class="muted">{% trans "Inga ingredienser." %}</td></tr>{% endfor %}
+  {% empty %}<tr><td class="muted">Inga ingredienser.</td></tr>{% endfor %}
 </table>
 {% if cost is not None %}
-<div class="ing-total"><span>{% blocktrans with chain=retailer_label %}Råvarukostnad hos {{ chain }}{% endblocktrans %} <span class="small muted">{% trans "(det som går åt, basvaror ej medräknade)" %}</span></span><span>≈ {{ cost|kr }}</span></div>
+<div class="ing-total"><span>Råvarukostnad hos {{ retailer_label }} <span class="small muted">(det som går åt, basvaror ej medräknade)</span></span><span>≈ {{ cost|kr }}</span></div>
 {% endif %}

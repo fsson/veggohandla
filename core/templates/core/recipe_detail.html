@@ -1,35 +1,35 @@
-{% extends "core/base.html" %}{% load vl i18n %}
+{% extends "core/base.html" %}{% load vl %}
 {% block title %}{{ recipe.name }} – Veggohandla{% endblock %}
 {% block content %}
 <div class="recipe-layout">
   <div class="stack">
     <div class="hero">{% include "core/partials/recipe_image.html" with cls="" %}
-      {% if recipe.image and recipe.image_credit %}<p class="tiny muted" style="margin-top:4px">{% trans "Foto:" %} {% if recipe.image_source %}<a class="link" href="{{ recipe.image_source }}" target="_blank" rel="noopener">{{ recipe.image_credit }}</a>{% else %}{{ recipe.image_credit }}{% endif %}</p>{% endif %}
+      {% if recipe.image and recipe.image_credit %}<p class="tiny muted" style="margin-top:4px">Foto: {% if recipe.image_source %}<a class="link" href="{{ recipe.image_source }}" target="_blank" rel="noopener">{{ recipe.image_credit }}</a>{% else %}{{ recipe.image_credit }}{% endif %}</p>{% endif %}
     </div>
     <div class="stack-sm">
       <h1>{{ recipe.name }}</h1>
       {% if recipe.description %}<p class="muted">{{ recipe.description }}</p>{% endif %}
       <p class="meta">
         {% if recipe.minutes %}<span>{% include "core/icon.html" with name="clock" %}{{ recipe.minutes }} min</span>{% endif %}
-        <span>{% include "core/icon.html" with name="users" %}{% blocktrans with n=recipe.servings %}{{ n }} portioner i originalet{% endblocktrans %}</span>
-        {% if recipe.source_url %}<a class="link" href="{{ recipe.source_url }}" target="_blank" rel="noopener">{% trans "Originalrecept" %} ↗</a>{% endif %}
+        <span>{% include "core/icon.html" with name="users" %}{{ recipe.servings }} portioner i originalet</span>
+        {% if recipe.source_url %}<a class="link" href="{{ recipe.source_url }}" target="_blank" rel="noopener">Originalrecept ↗</a>{% endif %}
       </p>
     </div>
 
     <form class="card stack" method="post" action="{% url 'recipe_plan' recipe.pk %}">{% csrf_token %}
-      <h2>{% trans "Lägg till i veckan" %}</h2>
+      <h2>Lägg till i veckan</h2>
       <div class="row">
-        <select name="date" aria-label="{% trans 'Dag' %}" class="grow">{% for value, label in plan_days %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+        <select name="date" aria-label="Dag" class="grow">{% for value, label in plan_days %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
         <input type="hidden" name="servings" value="{{ servings }}">
-        <button class="btn primary">{% include "core/icon.html" with name="plus" %}{% blocktrans %}Planera {{ servings }} port.{% endblocktrans %}</button>
+        <button class="btn primary">{% include "core/icon.html" with name="plus" %}Planera {{ servings }} port.</button>
       </div>
-      {% if planned %}<p class="small muted">{% trans "Redan planerad:" %} {% for m in planned %}{{ m.date|date:"D j/n" }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+      {% if planned %}<p class="small muted">Redan planerad: {% for m in planned %}{{ m.date|date:"D j/n" }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
     </form>
 
     <div class="row">
-      <a class="btn" href="{% url 'recipe_edit' recipe.pk %}">{% include "core/icon.html" with name="edit" %}{% trans "Redigera" %}</a>
-      <form method="post" action="{% url 'recipe_delete' recipe.pk %}" data-confirm="{% blocktrans with name=recipe.name %}Ta bort receptet ”{{ name }}”? Det försvinner även från veckoplaneringen.{% endblocktrans %}">{% csrf_token %}
-        <button class="btn ghost danger">{% include "core/icon.html" with name="trash" %}{% trans "Ta bort" %}</button>
+      <a class="btn" href="{% url 'recipe_edit' recipe.pk %}">{% include "core/icon.html" with name="edit" %}Redigera</a>
+      <form method="post" action="{% url 'recipe_delete' recipe.pk %}" data-confirm="Ta bort receptet ”{{ recipe.name }}”? Det försvinner även från veckoplaneringen.">{% csrf_token %}
+        <button class="btn ghost danger">{% include "core/icon.html" with name="trash" %}Ta bort</button>
       </form>
     </div>
   </div>
@@ -38,7 +38,7 @@
     <section class="card" id="recipe-ingredients">{% include "core/partials/recipe_ingredients.html" %}</section>
     {% if steps %}
     <section class="card stack">
-      <h2>{% trans "Gör så här" %}</h2>
+      <h2>Gör så här</h2>
       <ol class="steps">{% for s in steps %}<li><span>{{ s }}</span></li>{% endfor %}</ol>
     </section>
     {% endif %}

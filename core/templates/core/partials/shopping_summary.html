@@ -1,18 +1,18 @@
-{% load vl i18n %}
+{% load vl %}
 <div class="spread">
-  <h2>{% trans "Totalt" %}</h2>
-  <form method="post" action="{% url 'set_retailer' %}" class="segmented" aria-label="{% trans 'Butik' %}">{% csrf_token %}
+  <h2>Totalt</h2>
+  <form method="post" action="{% url 'set_retailer' %}" class="segmented" aria-label="Butik">{% csrf_token %}
     <input type="hidden" name="next" value="{% url 'shopping' week.isoformat %}">
     {% for value, label in retailers %}<button name="retailer" value="{{ value }}" class="{% if value == retailer %}active{% endif %}">{{ label }}</button>{% endfor %}
   </form>
 </div>
 <div>
   <div class="big">{{ list.total|kr_round }}</div>
-  <p class="small muted">{% blocktrans with chain=list.retailer_label %}hos {{ chain }}, hela förpackningar{% endblocktrans %}{% if list.missing %} · {% blocktrans with n=list.missing|length %}{{ n }} utan pris{% endblocktrans %}{% endif %}</p>
+  <p class="small muted">hos {{ list.retailer_label }}, hela förpackningar{% if list.missing %} · {{ list.missing|length }} utan pris{% endif %}</p>
 </div>
 {% with c=list.comparison %}{% if c %}
 <div>
-  <div class="line"><span>{% blocktrans with n=c.2 chain=list.retailer_label %}Samma {{ n }} varor hos {{ chain }}{% endblocktrans %}</span><strong>{{ c.0|kr_round }}</strong></div>
-  <div class="line"><span>{% blocktrans with chain=list.other_label %}… hos {{ chain }}{% endblocktrans %}</span><strong>{{ c.1|kr_round }}</strong></div>
+  <div class="line"><span>Samma {{ c.2 }} varor hos {{ list.retailer_label }}</span><strong>{{ c.0|kr_round }}</strong></div>
+  <div class="line"><span>… hos {{ list.other_label }}</span><strong>{{ c.1|kr_round }}</strong></div>
 </div>
 {% endif %}{% endwith %}

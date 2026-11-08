@@ -162,10 +162,12 @@ def test_serve_prepares_the_database_and_starts_everything(db, monkeypatch):
 
 
 def test_status_page_says_whether_refresh_is_automatic(db, client, monkeypatch):
+    AppSettings.objects.update_or_create(pk=1, defaults={"indexed_at": dt.datetime(2026, 11, 8, 6, 0, tzinfo=UTC)})
     monkeypatch.setattr(scheduler, "is_active", lambda: True)
-    assert "Uppdateras automatiskt varje morgon" in client.get("/sortiment/status/").content.decode()
+    page = client.get("/sortiment/status/").content.decode()
+    assert "uppdateras varje morgon" in page and "uppdaterat 8 nov" in page
     monkeypatch.setattr(scheduler, "is_active", lambda: False)
-    assert "Automatisk uppdatering är av" in client.get("/sortiment/status/").content.decode()
+    assert "uppdateras varje morgon" not in client.get("/sortiment/status/").content.decode()
 
 
 def test_static_files_and_images_are_served_without_debug(db, client, settings, tmp_path):

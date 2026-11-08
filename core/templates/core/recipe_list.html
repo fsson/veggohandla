@@ -1,15 +1,15 @@
-{% extends "core/base.html" %}{% load i18n %}
-{% block title %}{% trans "Recept" %} – Veggohandla{% endblock %}
+{% extends "core/base.html" %}
+{% block title %}Recept – Veggohandla{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>{% trans "Recept" %}</h1><p class="sub">{% trans "Dina veganska recept. Ingredienserna kopplas automatiskt till varor i sortimentet." %}</p></div>
+  <div><h1>Recept</h1><p class="sub">Dina veganska recept. Ingredienserna kopplas automatiskt till varor i sortimentet.</p></div>
   <div class="row">
-    <a class="btn" href="{% url 'recipe_import' %}">{% include "core/icon.html" with name="download" %}{% trans "Importera från länk" %}</a>
-    <a class="btn primary" href="{% url 'recipe_create' %}">{% include "core/icon.html" with name="plus" %}{% trans "Nytt recept" %}</a>
+    <a class="btn" href="{% url 'recipe_import' %}">{% include "core/icon.html" with name="download" %}Importera från länk</a>
+    <a class="btn primary" href="{% url 'recipe_create' %}">{% include "core/icon.html" with name="plus" %}Nytt recept</a>
   </div>
 </div>
 <form class="toolbar" hx-get="{% url 'recipe_list' %}" hx-target="#recipe-grid" hx-trigger="input changed delay:250ms" hx-push-url="true">
-  <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="{% trans 'Sök recept eller ingrediens' %}" aria-label="{% trans 'Sök recept' %}"></div>
+  <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="Sök recept eller ingrediens" aria-label="Sök recept"></div>
 </form>
 <div id="recipe-grid">{% include "core/partials/recipe_grid.html" %}</div>
 {% endblock %}

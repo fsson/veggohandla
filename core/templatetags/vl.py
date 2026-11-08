@@ -1,37 +1,29 @@
 from decimal import Decimal
 
 from django import template
-from django.utils import translation
-from django.utils.translation import gettext
 
 from core.domain.units import format_number
 
 register = template.Library()
 
 
-def _swedish() -> bool:
-    return (translation.get_language() or "sv").startswith("sv")
-
-
 @register.filter
 def kr(value):
-    """12.9 -> '12,90 kr' (Swedish) or '12.90 SEK' (English)."""
+    """12.9 -> '12,90 kr'."""
     if value is None or value == "":
         return ""
     v = Decimal(value).quantize(Decimal("0.01"))
     whole, _, dec = f"{v:,.2f}".partition(".")
-    if _swedish():
-        return f"{whole.replace(',', ' ')},{dec} kr"
-    return f"{whole}.{dec} SEK"
+    return f"{whole.replace(',', ' ')},{dec} kr"
 
 
 @register.filter
 def kr_round(value):
-    """412.3 -> '412 kr' (Swedish) or '412 SEK' (English), rounded to whole kronor."""
+    """412.3 -> '412 kr', rounded to whole kronor."""
     if value is None:
         return ""
     whole = f"{int(Decimal(value).to_integral_value()):,}"
-    return f"{whole.replace(',', ' ')} kr" if _swedish() else f"{whole} SEK"
+    return f"{whole.replace(',', ' ')} kr"
 
 
 @register.filter
@@ -60,10 +52,10 @@ def vegan_reason(code):
     """Translate the stored reason code of the vegan check (see domain/vegan.py)."""
     kind, _, arg = (code or "").partition(":")
     if kind == "contains":
-        return gettext("Innehåller ”%(word)s”") % {"word": arg}
+        return f"Innehåller ”{arg}”"
     return {
-        "labelled": gettext("Märkt vegansk"),
-        "no_animal": gettext("Inga animaliska ingredienser"),
-        "produce": gettext("Frukt och grönt"),
-        "no_list": gettext("Ingen ingredienslista"),
+        "labelled": "Märkt vegansk",
+        "no_animal": "Inga animaliska ingredienser",
+        "produce": "Frukt och grönt",
+        "no_list": "Ingen ingredienslista",
     }.get(kind, code or "")

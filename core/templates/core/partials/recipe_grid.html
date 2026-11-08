@@ -1,5 +1,5 @@
-{% load i18n %}{% if recipes %}
+{% if recipes %}
 <div class="recipe-grid">{% for recipe in recipes %}{% include "core/partials/recipe_card.html" %}{% endfor %}</div>
 {% else %}
-<div class="empty"><div class="big">🍲</div><p>{% if q %}{% trans "Inga recept matchar." %}{% else %}{% trans "Inga recept än." %}{% endif %}</p><a class="btn primary" href="{% url 'recipe_create' %}">{% trans "Skapa ett recept" %}</a></div>
+<div class="empty"><div class="big">🍲</div><p>{% if q %}Inga recept matchar.{% else %}Inga recept än.{% endif %}</p><a class="btn primary" href="{% url 'recipe_create' %}">Skapa ett recept</a></div>
 {% endif %}

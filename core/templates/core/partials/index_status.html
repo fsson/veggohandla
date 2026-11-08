@@ -1,20 +1,15 @@
-{% load vl i18n %}<div class="spread"{% if running %} hx-get="{% url 'index_status' %}" hx-trigger="every 5s" hx-target="#index-status" hx-swap="innerHTML"{% endif %}>
-  <div class="stack-sm">
-    <div class="status-line">
-      {% if running %}<span class="spinner"></span><strong>{% trans "Indexerar …" %}</strong> <span class="muted">{{ progress }}</span>
-      {% elif settings.indexed_at or stats.total %}<strong>{% blocktrans with n=stats.vegan %}{{ n }} veganska varor{% endblocktrans %}</strong>
-        <span class="muted">{% blocktrans with total=stats.total excluded=stats.not_vegan %}av {{ total }} i matkategorierna · {{ excluded }} uteslutna{% endblocktrans %}{% if stats.unchecked %} · {% blocktrans with n=stats.unchecked %}{{ n }} ej granskade än{% endblocktrans %}{% endif %}{% if settings.indexed_at %} · {% blocktrans with when=settings.indexed_at|date:"j b H:i" %}uppdaterat {{ when }}{% endblocktrans %}{% endif %}</span>
-      {% else %}<strong>{% trans "Inget index än." %}</strong> <span class="muted">{% trans "Hämta sortimentet för att få varor och priser." %}</span>{% endif %}
-    </div>
-    {% if not running and progress %}<p class="small muted">{% blocktrans %}Senaste körningen: {{ progress }}{% endblocktrans %}</p>{% endif %}
-    {% if settings.index_error and not running %}<p class="small error">{% blocktrans with error=settings.index_error %}Senaste körningen avbröts: {{ error }}{% endblocktrans %}</p>{% endif %}
-    <p class="tiny muted">{% blocktrans with start=window.0 end=window.1 %}Willys och Hemköp ber om högst ett anrop per 10 sekunder och bara mellan {{ start }} och {{ end }}, så det följer appen. Priser tar ~20 min. Varje varas ingredienslista läses en gång för att avgöra om den är vegansk; det hinns bara ~1 600 per morgon, så första gången tar det tre dagars körningar. Varor som dina recept behöver granskas först.{% endblocktrans %}</p>
-    <p class="tiny muted">{% if auto_refresh %}{% blocktrans with start=window.0 end=window.1 %}Uppdateras automatiskt varje morgon mellan {{ start }} och {{ end }}.{% endblocktrans %}{% else %}{% trans "Automatisk uppdatering är av. Starta appen med manage.py serve för att få den." %}{% endif %}</p>
+{% load vl %}<div class="spread"{% if running %} hx-get="{% url 'index_status' %}" hx-trigger="every 5s" hx-target="#index-status" hx-swap="innerHTML"{% endif %}>
+  <div class="status-line">
+    {% if running %}<span class="spinner"></span><strong>Indexerar …</strong> <span class="muted">{{ progress }}</span>
+    {% elif settings.indexed_at or stats.total %}<strong>{{ stats.vegan }} veganska varor</strong>
+      <span class="muted">{% if settings.indexed_at %}· uppdaterat {{ settings.indexed_at|date:"j b H:i" }}{% endif %}{% if auto_refresh %} · uppdateras varje morgon{% endif %}{% if stats.unchecked %} · {{ stats.unchecked }} ej granskade än{% endif %}</span>
+    {% else %}<strong>Inget index än.</strong> <span class="muted">Hämta sortimentet för att få varor och priser.</span>{% endif %}
+    {% if settings.index_error and not running %}<div class="small error">Senaste körningen avbröts: {{ settings.index_error }}</div>{% endif %}
   </div>
   {% if running %}
   {% elif in_window %}
-  <button class="btn {% if settings.indexed_at %}soft{% else %}primary{% endif %}" hx-post="{% url 'index_start' %}" hx-target="#index-status" hx-swap="innerHTML">{% include "core/icon.html" with name="refresh" %}{% if settings.indexed_at %}{% trans "Uppdatera nu" %}{% else %}{% trans "Hämta sortimentet" %}{% endif %}</button>
+  <button class="btn {% if settings.indexed_at %}soft{% else %}primary{% endif %}" hx-post="{% url 'index_start' %}" hx-target="#index-status" hx-swap="innerHTML">{% include "core/icon.html" with name="refresh" %}{% if settings.indexed_at %}Uppdatera nu{% else %}Hämta sortimentet{% endif %}</button>
   {% else %}
-  <span class="small muted nowrap">{% blocktrans with when=next_window|date:"D j b H:i" %}Nästa tillfälle {{ when }}{% endblocktrans %}</span>
+  <span class="small muted nowrap">Nästa tillfälle {{ next_window|date:"D j b H:i" }}</span>
   {% endif %}
 </div>

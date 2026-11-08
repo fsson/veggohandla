@@ -1,42 +1,42 @@
-{% extends "core/base.html" %}{% load i18n %}
-{% block title %}{% if recipe %}{% blocktrans with name=recipe.name %}Redigera {{ name }}{% endblocktrans %}{% else %}{% trans "Nytt recept" %}{% endif %} – Veggohandla{% endblock %}
+{% extends "core/base.html" %}
+{% block title %}{% if recipe %}Redigera {{ recipe.name }}{% else %}Nytt recept{% endif %} – Veggohandla{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{% if recipe %}{% trans "Redigera recept" %}{% else %}{% trans "Nytt recept" %}{% endif %}</h1>
-  {% if not recipe %}<a class="btn" href="{% url 'recipe_import' %}">{% include "core/icon.html" with name="download" %}{% trans "Importera från webben" %}</a>{% endif %}
+<div class="page-head"><h1>{% if recipe %}Redigera recept{% else %}Nytt recept{% endif %}</h1>
+  {% if not recipe %}<a class="btn" href="{% url 'recipe_import' %}">{% include "core/icon.html" with name="download" %}Importera från webben</a>{% endif %}
 </div>
 <form method="post" enctype="multipart/form-data" class="form-grid">{% csrf_token %}
   {{ form.non_field_errors }}
   {{ form.image_url }}{{ form.source_url }}
   <div class="grid-2" style="grid-template-columns: minmax(0,1fr) minmax(0,1.4fr)">
     <div class="form-grid">
-      <div class="field"><label for="id_name">{% trans "Namn" %}</label>{{ form.name }}{{ form.name.errors }}</div>
-      <div class="field"><label for="id_description">{% trans "Kort beskrivning" %}</label>{{ form.description }}</div>
+      <div class="field"><label for="id_name">Namn</label>{{ form.name }}{{ form.name.errors }}</div>
+      <div class="field"><label for="id_description">Kort beskrivning</label>{{ form.description }}</div>
       <div class="two">
-        <div class="field"><label for="id_servings">{% trans "Portioner" %}</label>{{ form.servings }}{{ form.servings.errors }}</div>
-        <div class="field"><label for="id_minutes">{% trans "Tid (min)" %}</label>{{ form.minutes }}</div>
+        <div class="field"><label for="id_servings">Portioner</label>{{ form.servings }}{{ form.servings.errors }}</div>
+        <div class="field"><label for="id_minutes">Tid (min)</label>{{ form.minutes }}</div>
       </div>
       <div class="field">
-        <label for="id_image">{% trans "Bild" %}</label>
-        {% if recipe.image %}<img src="{{ recipe.image.url }}" alt="" style="width:120px;border-radius:12px;margin-bottom:8px">{% elif image_preview %}<img src="{{ image_preview }}" alt="" style="width:120px;border-radius:12px;margin-bottom:8px"><p class="help">{% trans "Bilden laddas ner när du sparar." %}</p>{% endif %}
+        <label for="id_image">Bild</label>
+        {% if recipe.image %}<img src="{{ recipe.image.url }}" alt="" style="width:120px;border-radius:12px;margin-bottom:8px">{% elif image_preview %}<img src="{{ image_preview }}" alt="" style="width:120px;border-radius:12px;margin-bottom:8px"><p class="help">Bilden laddas ner när du sparar.</p>{% endif %}
         {{ form.image }}
-        {% if recipe.image %}<label class="check small">{{ form.remove_image }} {% trans "Ta bort bilden" %}</label>{% endif %}
+        {% if recipe.image %}<label class="check small">{{ form.remove_image }} Ta bort bilden</label>{% endif %}
       </div>
     </div>
     <div class="form-grid">
       <div class="field">
-        <label for="id_ingredient_text">{% trans "Ingredienser" %}</label>
+        <label for="id_ingredient_text">Ingredienser</label>
         <textarea name="ingredient_text" id="id_ingredient_text" rows="12" placeholder="{{ form.ingredient_text.field.widget.attrs.placeholder }}"
           hx-post="{% url 'ingredient_preview' %}" hx-trigger="load, input changed delay:500ms" hx-target="#ing-preview">{{ form.ingredient_text.value|default_if_none:"" }}</textarea>
-        <p class="help">{{ form.ingredient_text.help_text }} {% trans "Enheter:" %} g, kg, ml, dl, l, tsk, msk, krm, st, förp, klyfta, knippe …</p>
-        <p class="help">{% trans "Till höger om varje rad ser du vilken vara den blir i inköpslistan." %}</p>
+        <p class="help">{{ form.ingredient_text.help_text }} Enheter: g, kg, ml, dl, l, tsk, msk, krm, st, förp, klyfta, knippe …</p>
+        <p class="help">Till höger om varje rad ser du vilken vara den blir i inköpslistan.</p>
         <div id="ing-preview"></div>
       </div>
-      <div class="field"><label for="id_instructions">{% trans "Gör så här" %}</label>{{ form.instructions }}<p class="help">{% trans "Ett steg per rad." %}</p></div>
+      <div class="field"><label for="id_instructions">Gör så här</label>{{ form.instructions }}<p class="help">Ett steg per rad.</p></div>
     </div>
   </div>
   <div class="form-actions">
-    <a class="btn ghost" href="{% if recipe %}{% url 'recipe_detail' recipe.pk %}{% else %}{% url 'recipe_list' %}{% endif %}">{% trans "Avbryt" %}</a>
-    <button class="btn primary">{% trans "Spara recept" %}</button>
+    <a class="btn ghost" href="{% if recipe %}{% url 'recipe_detail' recipe.pk %}{% else %}{% url 'recipe_list' %}{% endif %}">Avbryt</a>
+    <button class="btn primary">Spara recept</button>
   </div>
 </form>
 {% endblock %}

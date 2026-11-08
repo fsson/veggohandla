@@ -12,7 +12,6 @@ import re
 from dataclasses import dataclass, field
 
 import httpx
-from django.utils.translation import gettext
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Veggohandla/0.2"
 _LD_RE = re.compile(
@@ -105,7 +104,7 @@ def parse_html(page: str, url: str = "") -> ImportedRecipe:
         if m := re.search(r"\d+", str(yld or "")):
             servings = max(1, min(int(m.group()), 50))
         return ImportedRecipe(
-            name=_text(r.get("name")) or gettext("Importerat recept"),
+            name=_text(r.get("name")) or "Importerat recept",
             description=_text(r.get("description"))[:500],
             servings=servings,
             minutes=_duration_minutes(r.get("totalTime") or r.get("cookTime")),
@@ -114,17 +113,17 @@ def parse_html(page: str, url: str = "") -> ImportedRecipe:
             image_url=_image(r.get("image")),
             source_url=url,
         )
-    raise ImportError_(gettext("Hittade inget recept på sidan (saknar schema.org/Recipe)."))
+    raise ImportError_("Hittade inget recept på sidan (saknar schema.org/Recipe).")
 
 
 def fetch(url: str) -> ImportedRecipe:
     if not re.match(r"^https?://", url):
-        raise ImportError_(gettext("Ange en webbadress som börjar med http:// eller https://"))
+        raise ImportError_("Ange en webbadress som börjar med http:// eller https://")
     try:
         r = httpx.get(url, headers={"User-Agent": USER_AGENT}, timeout=15, follow_redirects=True)
         r.raise_for_status()
     except httpx.HTTPError as e:
-        raise ImportError_(gettext("Kunde inte hämta sidan: %(error)s") % {"error": e}) from e
+        raise ImportError_(f"Kunde inte hämta sidan: {e}") from e
     return parse_html(r.text, url)
 
 

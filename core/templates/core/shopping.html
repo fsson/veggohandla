@@ -1,13 +1,13 @@
-{% extends "core/base.html" %}{% load vl i18n %}
-{% block title %}{% blocktrans %}Handla v. {{ week_no }}{% endblocktrans %} – Veggohandla{% endblock %}
+{% extends "core/base.html" %}{% load vl %}
+{% block title %}Handla v. {{ week_no }} – Veggohandla{% endblock %}
 {% block content %}
 <div class="page-head">
-  <div><h1>{% trans "Inköpslista" %}</h1><p class="sub">{% trans "Billigaste veganska varan för mängden väljs automatiskt. Byt vara så kommer appen ihåg ditt val." %}</p></div>
+  <div><h1>Inköpslista</h1><p class="sub">Billigaste veganska varan för mängden väljs automatiskt. Byt vara så kommer appen ihåg ditt val.</p></div>
   <div class="week-nav">
-    {% if not is_current %}<a class="btn sm ghost" href="{% url 'shopping_current' %}">{% trans "Denna vecka" %}</a>{% endif %}
-    <a class="btn icon-only ghost" href="{% url 'shopping' prev %}" aria-label="{% trans 'Föregående vecka' %}">{% include "core/icon.html" with name="left" %}</a>
-    <div class="label"><strong>{% blocktrans %}Vecka {{ week_no }}{% endblocktrans %}</strong><span class="small muted">{{ range }}</span></div>
-    <a class="btn icon-only ghost" href="{% url 'shopping' next %}" aria-label="{% trans 'Nästa vecka' %}">{% include "core/icon.html" with name="right" %}</a>
+    {% if not is_current %}<a class="btn sm ghost" href="{% url 'shopping_current' %}">Denna vecka</a>{% endif %}
+    <a class="btn icon-only ghost" href="{% url 'shopping' prev %}" aria-label="Föregående vecka">{% include "core/icon.html" with name="left" %}</a>
+    <div class="label"><strong>Vecka {{ week_no }}</strong><span class="small muted">{{ range }}</span></div>
+    <a class="btn icon-only ghost" href="{% url 'shopping' next %}" aria-label="Nästa vecka">{% include "core/icon.html" with name="right" %}</a>
   </div>
 </div>
 
@@ -25,17 +25,17 @@
     {% empty %}
     <div class="card empty">
       <div class="big">🛒</div>
-      <p>{% blocktrans %}Inget att handla vecka {{ week_no }} än.{% endblocktrans %}</p>
-      <a class="btn primary" href="{% url 'planner' week.isoformat %}">{% trans "Planera veckan" %}</a>
+      <p>Inget att handla vecka {{ week_no }} än.</p>
+      <a class="btn primary" href="{% url 'planner' week.isoformat %}">Planera veckan</a>
     </div>
     {% endfor %}
 
     {% if list.staples %}
     <section class="shop-group">
-      <h2><span>🧂</span>{% trans "Kolla hemma" %}</h2>
+      <h2><span>🧂</span>Kolla hemma</h2>
       <div class="staples">
         {% for row in list.staples %}
-        <span class="staple" title="{{ row.quantity|default:_('efter smak') }}">{{ row.name }}</span>
+        <span class="staple" title="{{ row.quantity|default:'efter smak' }}">{{ row.name }}</span>
         {% endfor %}
       </div>
     </section>
@@ -48,20 +48,20 @@
     </div>
 
     <div class="card stack">
-      <h2>{% trans "Lägg till vara" %}</h2>
+      <h2>Lägg till vara</h2>
       <div class="searchbox">{% include "core/icon.html" with name="search" %}
-        <input type="search" name="q" placeholder="{% trans 'T.ex. havredryck, bröd, kaffe' %}" aria-label="{% trans 'Sök vara att lägga till' %}"
+        <input type="search" name="q" placeholder="T.ex. havredryck, bröd, kaffe" aria-label="Sök vara att lägga till"
           hx-get="{% url 'extra_search' week.isoformat %}" hx-trigger="input changed delay:250ms" hx-target="#extra-results"></div>
       <div id="extra-results"></div>
     </div>
 
     {% if list.removed %}
     <div class="card stack">
-      <h2>{% trans "Har hemma" %}</h2>
+      <h2>Har hemma</h2>
       <ul class="plain-list">
         {% for row in list.removed %}
         <li><span>{{ row.name }}</span>
-          <button class="btn xs ghost" hx-post="{% url 'shopping_item' week.isoformat row.ingredient_id %}" hx-vals='{"action": "restore"}'>{% trans "Ångra" %}</button></li>
+          <button class="btn xs ghost" hx-post="{% url 'shopping_item' week.isoformat row.ingredient_id %}" hx-vals='{"action": "restore"}'>Ångra</button></li>
         {% endfor %}
       </ul>
     </div>
@@ -69,8 +69,8 @@
 
     {% if list.count %}
     <div class="row wrap">
-      <button class="btn sm" data-share-list data-copied="{% trans 'Kopierad ✓' %}">{% include "core/icon.html" with name="share" %}<span>{% trans "Kopiera listan" %}</span></button>
-      <button class="btn sm ghost" onclick="window.print()">{% trans "Skriv ut" %}</button>
+      <button class="btn sm" data-share-list data-copied="Kopierad ✓">{% include "core/icon.html" with name="share" %}<span>Kopiera listan</span></button>
+      <button class="btn sm ghost" onclick="window.print()">Skriv ut</button>
     </div>
     <textarea id="list-text" hidden rows="10" readonly>{{ list.as_text }}</textarea>
     {% endif %}

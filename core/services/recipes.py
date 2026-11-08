@@ -5,7 +5,6 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
-from django.utils.translation import gettext_noop
 
 from core.domain.parse import normalize_name, parse_line
 from core.models import (
@@ -18,8 +17,7 @@ from core.models import (
 )
 from core.services.index import normalize
 
-# Stored in Swedish; marked for translation so the UI can show it in the active language.
-FALLBACK_CATEGORY = gettext_noop("Övrigt")
+FALLBACK_CATEGORY = "Övrigt"
 
 
 def resolve(name: str) -> tuple[Ingredient | None, str]:

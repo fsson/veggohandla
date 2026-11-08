@@ -89,7 +89,7 @@ def classify(diet: str, ingredients: str, category: str, name: str = "") -> tupl
     """(vegan?, reason code). None = unknown, treated as not vegan.
 
     The reason is a language-neutral code ("labelled", "no_animal", "produce", "no_list" or
-    "contains:<word>") that the UI translates when it is shown.
+    "contains:<word>") that the UI turns into text.
     """
     if diet and "vegan" in diet.lower():
         return True, "labelled"

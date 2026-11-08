@@ -12,7 +12,6 @@ def media(request, path):
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("i18n/", include("django.conf.urls.i18n")),  # set_language (the SV/EN switch)
     path("", include("core.urls")),
     re_path(r"^media/(?P<path>.*)$", media),
 ]

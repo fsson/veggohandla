@@ -481,15 +481,12 @@ def test_requests_are_paced_per_robots_txt(monkeypatch):
     axfood._get("willys", "/b")
     assert len(slept) == 1 and 9 < slept[0] <= 10  # the second request waited ~10 s
 
-def test_status_page_shows_the_real_visiting_hours(db, client, monkeypatch):
-    """Regression: while the window was open it showed a window starting "now"."""
-    jan = dt.date(2026, 1, 15)  # Swedish winter time: 04:00–08:45 UTC = 05:00–09:45
-    monkeypatch.setattr(axfood, "visit_window", lambda day=None: (
-        dt.datetime.combine(jan, axfood.VISIT_START, tzinfo=dt.timezone.utc),
-        dt.datetime.combine(jan, axfood.VISIT_END, tzinfo=dt.timezone.utc)))
-    monkeypatch.setattr(axfood, "in_visit_time", lambda now=None: True)
-    page = client.get("/sortiment/status/").content.decode()
-    assert "ber om högst ett anrop per 10 sekunder" in page and "05:00 och 09:45" in page
+def test_product_links_point_at_the_chains_product_pages():
+    assert axfood.product_url("willys", "101233933_KG", "Bananer Ekologiska Klass 1") == \
+        "https://www.willys.se/produkt/Bananer-Ekologiska-Klass-1-101233933_KG"
+    assert axfood.product_url("hemkop", "101_ST", "Havredryck Barista, Äpple") == \
+        "https://www.hemkop.se/produkt/Havredryck-Barista-Apple-101_ST"
+    assert axfood.product_url("willys", "101_ST") == "https://www.willys.se/produkt/101_ST"
 
 def test_no_requests_outside_visit_time(db, monkeypatch):
     monkeypatch.setattr(axfood, "in_visit_time", lambda now=None: False)
@@ -665,3 +662,11 @@ def test_ingredient_preview_shows_product(seeded, client):
 def test_every_category_has_store_categories_except_other(seeded):
     for c in Category.objects.exclude(name="Övrigt"):
         assert c.store_categories, c.name
+
+
+def test_default_crawl_covers_everything_but_meat_fish_and_non_food():
+    tree = [{"url": u, "title": u, "children": [{"url": f"{u}/x", "title": "x"}]} for u in
+            ("fryst", "mejeri-ost-och-agg", "dryck", "kott-chark-och-fagel", "fisk-och-skaldjur", "hem-och-hushall")]
+    slugs = [s for s, _ in index.resolve_sections(tree, None)]
+    assert slugs == ["fryst/x", "mejeri-ost-och-agg/x", "dryck/x"]
+    assert [s for s, _ in index.resolve_sections(tree, {"fryst": None})] == ["fryst/x"]

@@ -1,4 +1,4 @@
-{% load i18n %}{% if recipes %}
+{% if recipes %}
 <ul class="pick-list">
   {% for recipe in recipes %}
   <li>
@@ -11,5 +11,5 @@
   {% endfor %}
 </ul>
 {% else %}
-<div class="empty"><p>{% trans "Inga recept hittades." %}</p><a class="btn primary" href="{% url 'recipe_create' %}">{% trans "Skapa recept" %}</a></div>
+<div class="empty"><p>Inga recept hittades.</p><a class="btn primary" href="{% url 'recipe_create' %}">Skapa recept</a></div>
 {% endif %}
