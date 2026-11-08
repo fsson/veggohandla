@@ -1,0 +1,13 @@
+{% load vl i18n %}{% if q %}
+{% if results %}
+<ul class="plain-list">
+  {% for p, price in results %}
+  <li>
+    <span class="row grow" style="gap:8px">{% if p.image_url %}<img class="thumbnail" src="{{ p.image_url }}" alt="" loading="lazy" style="width:32px;height:32px">{% endif %}
+      <span class="grow"><span class="trunc" style="display:block">{{ p.name }}</span><span class="tiny muted">{{ p.size_text }} · {{ price.unit_price|kr }}{% if p.price_per_kg %}/kg{% endif %}</span></span></span>
+    <form method="post" action="{% url 'extra_add' week.isoformat %}">{% csrf_token %}<input type="hidden" name="code" value="{{ p.code }}"><button class="btn icon-only sm soft" aria-label="{% blocktrans with name=p.name %}Lägg till {{ name }}{% endblocktrans %}">{% include "core/icon.html" with name="plus" %}</button></form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}<p class="small muted">{% blocktrans %}Inga veganska varor matchar ”{{ q }}”.{% endblocktrans %}</p>{% endif %}
+{% endif %}

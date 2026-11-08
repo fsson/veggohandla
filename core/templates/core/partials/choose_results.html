@@ -1,0 +1,34 @@
+{% load vl i18n %}
+{% if ingredient.preferred_code and not q %}
+<form method="post" action="{% url 'shopping_choose' week.isoformat ingredient.pk %}" hx-post="{% url 'shopping_choose' week.isoformat ingredient.pk %}" class="notice" style="margin:8px 0">
+  <div class="grow small">{% blocktrans with name=ingredient.name|lower %}Du har valt en egen vara för {{ name }}. Den används varje vecka.{% endblocktrans %}</div>
+  <input type="hidden" name="code" value="">
+  <button class="btn sm">{% trans "Välj billigast automatiskt" %}</button>
+</form>
+{% endif %}
+{% if offers %}
+<ul class="offer-list">
+  {% for o in offers %}{% with p=o.product %}
+  <li class="offer{% if row.offer and row.offer.product.code == p.code %} current{% endif %}">
+    {% if p.image_url %}<img class="thumbnail" src="{{ p.image_url }}" alt="" loading="lazy">{% else %}<span class="thumbnail">–</span>{% endif %}
+    <div style="min-width:0">
+      <div class="trunc"><strong>{{ p.name }}</strong> <span class="muted">{{ p.size_text }}</span></div>
+      <div class="tiny muted row wrap" style="gap:6px">
+        {% if p.brand %}<span>{{ p.brand }}</span>{% endif %}
+        {% if o.price.compare_price %}<span>{% if p.brand %}· {% endif %}{{ o.price.compare_price }}</span>{% endif %}
+        {% if o.price.promo_active %}<span class="badge promo">{{ o.price.promo_text }}</span>{% endif %}
+        {% if not o.exact %}<span class="badge" title="{% trans 'Mängden gick inte att räkna om till förpackningens storlek' %}">{% trans "uppskattat" %}</span>{% endif %}
+        <a class="link" href="{{ p|product_url:'willys' }}" target="_blank" rel="noopener">{% trans "visa" %}</a>
+      </div>
+    </div>
+    <div class="cost">{% if o.cost %}<strong>{{ o.cost|kr }}</strong>{% endif %}<span class="tiny muted">{{ o.amount_text }}</span></div>
+    <form method="post" hx-post="{% url 'shopping_choose' week.isoformat ingredient.pk %}">
+      <input type="hidden" name="code" value="{{ p.code }}">
+      {% if row.offer and row.offer.product.code == p.code %}<span class="badge green">{% trans "vald" %}</span>{% else %}<button class="btn sm soft">{% trans "Välj" %}</button>{% endif %}
+    </form>
+  </li>
+  {% endwith %}{% endfor %}
+</ul>
+{% else %}
+<div class="empty"><p>{% if q %}{% blocktrans %}Inga veganska varor matchar ”{{ q }}”.{% endblocktrans %}{% else %}{% blocktrans with name=ingredient.name|lower %}Inga varor matchar {{ name }} än. Sök efter en vara ovan.{% endblocktrans %}{% endif %}</p></div>
+{% endif %}

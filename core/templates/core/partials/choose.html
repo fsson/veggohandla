@@ -1,0 +1,11 @@
+{% load i18n %}<div class="dialog-head">
+  <div class="spread">
+    <div><h2>{% blocktrans with name=ingredient.name %}Välj vara: {{ name }}{% endblocktrans %}</h2>
+      <p class="sub">{% if row %}{% trans "Behov:" %} {{ row.quantity|default:_("efter smak") }}{% if row.sources %} ({% for s in row.sources %}{{ s.recipe_name }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %} · {% endif %}{% blocktrans with chain=retailer_label %}Priser hos {{ chain }}, billigast för mängden först.{% endblocktrans %}</p></div>
+    <button class="btn icon-only ghost" data-close-dialog aria-label="{% trans 'Stäng' %}">{% include "core/icon.html" with name="x" %}</button>
+  </div>
+  <div class="searchbox">{% include "core/icon.html" with name="search" %}
+    <input type="search" name="q" placeholder="{% trans 'Sök bland alla veganska varor i stället' %}" aria-label="{% trans 'Sök vara' %}"
+      hx-get="{% url 'shopping_choose' week.isoformat ingredient.pk %}" hx-trigger="input changed delay:250ms" hx-target="#choose-results"></div>
+</div>
+<div class="dialog-body" id="choose-results">{% include "core/partials/choose_results.html" %}</div>

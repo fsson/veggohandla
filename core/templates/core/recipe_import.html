@@ -1,0 +1,10 @@
+{% extends "core/base.html" %}{% load i18n %}
+{% block title %}{% trans "Importera recept" %} – Veggohandla{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>{% trans "Importera recept" %}</h1><p class="sub">{% trans "Klistra in en länk från t.ex. ICA, Köket, Arla, Zeta eller de flesta matbloggar." %}</p></div></div>
+<form method="post" class="card stack" style="max-width:720px" hx-boost="false">{% csrf_token %}
+  <div class="field"><label for="url">{% trans "Länk till receptet" %}</label><input type="url" id="url" name="url" value="{{ url }}" placeholder="https://…" required autofocus></div>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <div class="row"><button class="btn primary">{% trans "Hämta recept" %}</button><span class="muted small">{% trans "Du får granska allt innan det sparas." %}</span></div>
+</form>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% load vl i18n %}{% if rows %}
+<ul class="preview-list" aria-label="{% trans 'Så här tolkas raderna' %}">
+  {% for r in rows %}
+  <li>
+    <span class="trunc">{% if r.parsed.quantity is not None %}<strong>{{ r.parsed.quantity|num }} {{ r.unit }}</strong> {% endif %}{% if r.match %}{{ r.match.name }}{% else %}{{ r.parsed.name }}{% endif %}{% if r.parsed.note %} <span class="muted">· {{ r.parsed.note }}</span>{% endif %}</span>
+    <span class="to">
+      {% if not r.match %}<span class="badge warn">{% trans "ny ingrediens" %}</span><span class="trunc">{% trans "varor söks när du sparar" %}</span>
+      {% elif r.match.is_staple %}<span class="badge">{% trans "basvara" %}</span><span class="trunc">{% trans "kolla hemma" %}</span>
+      {% elif not r.match.in_shopping_list %}<span class="badge">{% trans "handlas inte" %}</span>
+      {% elif r.offer %}<span class="badge green">✓</span><span class="trunc" title="{{ r.offer.product.name }}">{{ r.offer.product.name }} {{ r.offer.product.size_text }}</span><span class="nowrap">{% if r.offer.cost %}{{ r.offer.cost|kr }}{% endif %}</span>
+      {% else %}<span class="badge warn">{% trans "ingen vara" %}</span>{% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

@@ -1,0 +1,28 @@
+[project]
+name = "veggohandla"
+version = "0.1.0"
+description = "Veckoplanering av vegansk mat och automatisk inköpslista"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.2,<6",
+    "httpx>=0.27",
+    "pillow>=11",
+    "waitress>=3.0.2",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "polib>=1.2.0",
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+testpaths = ["core/tests"]

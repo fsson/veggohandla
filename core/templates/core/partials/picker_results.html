@@ -1,0 +1,15 @@
+{% load i18n %}{% if recipes %}
+<ul class="pick-list">
+  {% for recipe in recipes %}
+  <li>
+    <button class="pick" hx-post="{% url 'meal_add' %}" hx-vals='{"date": "{{ date.isoformat }}", "recipe": "{{ recipe.pk }}"}' hx-include="#picker-servings" hx-target="#d-{{ date.isoformat }}" hx-swap="outerHTML" data-close-dialog>
+      {% include "core/partials/recipe_image.html" with cls="" %}
+      <span><strong>{{ recipe.name }}</strong>{% if recipe.minutes %}<br><span class="small muted">{{ recipe.minutes }} min</span>{% endif %}</span>
+      {% include "core/icon.html" with name="plus" %}
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty"><p>{% trans "Inga recept hittades." %}</p><a class="btn primary" href="{% url 'recipe_create' %}">{% trans "Skapa recept" %}</a></div>
+{% endif %}

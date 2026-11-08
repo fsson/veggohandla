@@ -1,0 +1,1 @@
+{% load vl %}{% if recipe.image %}<img src="{{ recipe.image.url }}" alt="" loading="lazy" class="{{ cls|default:'thumb' }}">{% else %}<div class="placeholder" style="--h: {{ recipe.name|hue }}" aria-hidden="true">{{ recipe.name|initial }}</div>{% endif %}

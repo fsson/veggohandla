@@ -1,0 +1,19 @@
+{% load i18n %}<section class="day{% if day.today %} today{% endif %}{% if day.past %} past{% endif %}" id="d-{{ day.date.isoformat }}" data-refresh="{% url 'day_partial' day.date.isoformat %}">
+  <div class="day-head"><h3>{% if day.today %}{% trans "Idag" %}{% else %}{{ day.label }}{% endif %}</h3><span class="sub">{{ day.sub }}</span></div>
+  <ul class="meals" data-date="{{ day.date.isoformat }}" data-move-url="{% url 'meal_move' %}">
+    {% for m in day.meals %}
+    <li class="meal" data-id="{{ m.pk }}">
+      <a class="name" href="{% url 'recipe_detail' m.recipe_id %}?portioner={{ m.servings }}" title="{{ m.recipe.name }}">{{ m.recipe.name }}</a>
+      <div class="foot">
+        <span class="portions">
+          <button class="btn icon-only xs ghost hover-only" hx-post="{% url 'meal_servings' m.pk %}" hx-vals='{"delta": -1}' hx-target="closest .day" hx-swap="outerHTML" {% if m.servings <= 1 %}disabled{% endif %} aria-label="{% trans 'Färre portioner' %}">{% include "core/icon.html" with name="minus" %}</button>
+          <span class="count">{% blocktrans with n=m.servings %}{{ n }} port.{% endblocktrans %}</span>
+          <button class="btn icon-only xs ghost hover-only" hx-post="{% url 'meal_servings' m.pk %}" hx-vals='{"delta": 1}' hx-target="closest .day" hx-swap="outerHTML" aria-label="{% trans 'Fler portioner' %}">{% include "core/icon.html" with name="plus" %}</button>
+        </span>
+        <button class="btn icon-only xs ghost danger hover-only" hx-post="{% url 'meal_delete' m.pk %}" hx-target="closest .day" hx-swap="outerHTML" aria-label="{% blocktrans with name=m.recipe.name %}Ta bort {{ name }}{% endblocktrans %}">{% include "core/icon.html" with name="x" %}</button>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  <button class="add-meal" hx-get="{% url 'recipe_picker' %}?date={{ day.date.isoformat }}" hx-target="#dialog-content">{% include "core/icon.html" with name="plus" %}{% trans "Lägg till" %}</button>
+</section>

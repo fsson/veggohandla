@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}{% load vl i18n %}
+{% block title %}{% blocktrans %}Vecka {{ week_no }}{% endblocktrans %} – Veggohandla{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>{% trans "Veckan" %}</h1><p class="sub">{% trans "Lägg recept på dagarna – inköpslistan räknas fram automatiskt." %}</p></div>
+  <div class="week-nav">
+    {% if not is_current %}<a class="btn sm ghost" href="{% url 'planner_current' %}">{% trans "Denna vecka" %}</a>{% endif %}
+    <a class="btn icon-only ghost" href="{% url 'planner' prev %}" aria-label="{% trans 'Föregående vecka' %}">{% include "core/icon.html" with name="left" %}</a>
+    <div class="label"><strong>{% blocktrans %}Vecka {{ week_no }}{% endblocktrans %}</strong><span class="small muted">{{ range }}</span></div>
+    <a class="btn icon-only ghost" href="{% url 'planner' next %}" aria-label="{% trans 'Nästa vecka' %}">{% include "core/icon.html" with name="right" %}</a>
+  </div>
+</div>
+
+{% if index_empty %}{% include "core/partials/index_notice.html" %}{% endif %}
+
+<div class="card summary-bar" id="week-summary" hx-get="{% url 'week_summary' week.isoformat %}" hx-trigger="plan-changed from:body" hx-swap="innerHTML">
+  {% include "core/partials/week_summary.html" %}
+</div>
+
+<div class="week-grid">
+  {% for day in days %}{% include "core/partials/day.html" %}{% endfor %}
+</div>
+
+<div class="week-foot">
+  <p class="small muted">{% trans "Dra en måltid för att flytta den. Håll muspekaren över den för att ändra portioner." %}</p>
+  <div class="row">
+    {% if prev_has_meals %}
+    <form method="post" action="{% url 'week_copy' week.isoformat %}" data-confirm="{% trans 'Kopiera förra veckans måltider till den här veckan?' %}">{% csrf_token %}<button class="btn sm">{% trans "Kopiera förra veckan" %}</button></form>
+    {% endif %}
+    {% if meal_count %}
+    <form method="post" action="{% url 'week_clear' week.isoformat %}" data-confirm="{% trans 'Ta bort alla måltider den här veckan?' %}">{% csrf_token %}<button class="btn sm ghost danger">{% trans "Töm veckan" %}</button></form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{% load vl i18n %}
+<div class="stat"><strong>{{ list.count }}</strong><span>{% trans "varor att handla" %}</span></div>
+<div class="stat"><strong>{% if list.total %}{{ list.total|kr_round }}{% else %}–{% endif %}</strong><span>{% blocktrans with chain=list.retailer_label %}uppskattat hos {{ chain }}{% endblocktrans %}</span></div>
+{% if list.staples %}<div class="stat"><strong>{{ list.staples|length }}</strong><span>{% trans "basvaror att kolla hemma" %}</span></div>{% endif %}
+<div class="grow"></div>
+<a class="btn primary" href="{% url 'shopping' week.isoformat %}">{% include "core/icon.html" with name="cart" %}{% trans "Till inköpslistan" %}</a>

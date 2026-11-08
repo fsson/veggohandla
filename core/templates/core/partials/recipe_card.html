@@ -1,0 +1,10 @@
+<a class="recipe-card" href="{% url 'recipe_detail' recipe.pk %}">
+  {% include "core/partials/recipe_image.html" %}
+  <div class="body">
+    <h3>{{ recipe.name }}</h3>
+    <p class="meta">
+      {% if recipe.minutes %}<span>{% include "core/icon.html" with name="clock" %}{{ recipe.minutes }} min</span>{% endif %}
+      <span>{% include "core/icon.html" with name="users" %}{{ recipe.servings }}</span>
+    </p>
+  </div>
+</a>
