@@ -20,11 +20,9 @@ prices from Willys and Hemköp, two Swedish supermarket chains.
 
 Everything runs locally on your computer. No account, no cloud service.
 
-The interface is available in Swedish and English. The **SV / EN** switch in the top right
-changes language, and your browser's language is used at first. Recipe, ingredient and
-product names are always Swedish, because the stores are Swedish. The method of a recipe can
-be written in any language, but ingredient lines need the Swedish ingredient names and units
-(`dl`, `msk`, `förp` …) to be recognised.
+The interface, recipes, ingredients and product names are all in Swedish, because the stores are
+Swedish. If you need it in another language, use your browser's built-in translator. Ingredient
+lines in recipes need the Swedish ingredient names and units (`dl`, `msk`, `förp` …) to be recognised.
 
 ## Getting started
 
@@ -149,22 +147,7 @@ fetched last.
 
 ```bash
 VEGGOHANDLA_DEBUG=1 uv run manage.py runserver   # development server with error pages and reloading
-uv run pytest            # 140+ tests: units, merging, vegan check, product choice, views, translation
+uv run pytest            # 140+ tests: units, merging, vegan check, product choice, views
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.
-
-### Translations
-
-Swedish is the source language: the Swedish texts in the code and templates are the keys, and
-`locale/en/` holds the English translation. When you change a text:
-
-```bash
-uv run manage.py makemessages -l en -i .venv -i data -i docs --no-obsolete --no-location
-# translate new entries in locale/en/LC_MESSAGES/django.po; for changed texts, rewrite the
-# translation and remove both "#, fuzzy" and the "#| msgid …" line holding the old text
-uv run manage.py compilemessages -l en     # builds django.mo, which is committed
-```
-
-A test (`core/tests/test_i18n.py`) fails if a text is untranslated, if `django.mo` is stale,
-or if Swedish interface text leaks through on the English pages.

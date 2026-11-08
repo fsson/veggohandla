@@ -41,10 +41,9 @@ core/
 deploy/install.sh    Installs/updates the app as a systemd service (e.g. on a Raspberry Pi)
 ```
 
-Language: the app is for Swedish users and Swedish stores. The seed data (ingredient and
-recipe names) and the product names are Swedish content. The interface is Swedish with an
-English translation (see decision 13). The README is English. Code,
-comments and these docs are English.
+Language: the app is for Swedish users and Swedish stores. The interface, the seed data
+(ingredient and recipe names) and the product names are Swedish (see decision 13). The
+README is English. Code, comments and these docs are English.
 
 ## Data model
 
@@ -92,8 +91,10 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
 9. **The vegan check is strict** (`domain/vegan.py`). Labelled vegan or an ingredient list
    without animal words → included. An animal word → never included. No ingredient list →
    only unprocessed fruit and vegetables. Trace warnings are ignored. The ingredient list
-   is stored, so a changed rule can be re-run locally (`index --reclassify`). Meat, fish,
-   cheese, milk and egg categories are not fetched at all.
+   is stored, so a changed rule can be re-run locally (`index --reclassify`). Everything
+   is crawled except the top categories for meat, fish and non-food (`SKIPPED_TOP_WORDS`),
+   so vegan products in dairy, frozen, drinks and so on are found; the first full vetting
+   takes more mornings, products matching an ingredient go first.
 10. **The store integration is decoupled and follows the chains' rules.** Network requests
     only happen while indexing. The chains' robots.txt is followed: `Crawl-delay: 10` (one
     request per 10 s per chain) and `Visit-time: 0400-0845` (UTC); no requests are made
@@ -108,26 +109,14 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
     personliga bruk" (only for your personal use). Therefore each person runs their own
     local instance with their own index; the app must not be operated as a shared or public
     service.
-13. **Interface translation: Swedish is the source language, English the translation.**
-    The Swedish texts in code and templates are the gettext msgids, so the Swedish UI needs no
-    catalogue and adding a language means adding `locale/<lang>/`. Only the interface is
-    translated; content (recipes, ingredients, product and store category names, units like
-    `dl`/`förp`) stays Swedish. Details that matter:
-    - The language follows the browser (`Accept-Language`) until chosen with the SV/EN switch
-      (a cookie, via Django's `set_language`).
-    - The domain layer has no Django dependency, so number formatting reads a context variable
-      (`units.decimal_separator`) that `DecimalSeparatorMiddleware` sets per request: `1,5` in
-      Swedish, `1.5` in English. The recipe parser accepts both, so recipe text round-trips.
-      Prices render as `12,90 kr` / `12.90 SEK` (template filters in `templatetags/vl.py`).
-    - Text that is stored in the database is stored as a code or message id plus parameters
-      and translated when shown: the vegan reason (`labelled`, `contains:ägg` …, see
-      `vegan_reason`) and the index progress (`index.progress_text`). Never store finished
-      translated text, because a background run has no language.
-    - Section names are Swedish in the database and translated at render time
-      (`gettext(category.name)`); `seed_data` marks them with `gettext_noop` for extraction.
-    - `locale/en/LC_MESSAGES/django.mo` is committed so a fresh clone works without GNU gettext.
-      `test_i18n.py` fails on untranslated, stale or missing entries, and if Swedish interface
-      text shows up on an English page.
+13. **The interface is Swedish only.** There is no translation layer: texts are written
+    directly in templates and code, numbers use a decimal comma and prices render as
+    `12,90 kr` (template filters in `templatetags/vl.py`). Anyone who needs another language
+    can use the browser's built-in translator. Consequences that matter:
+    - Text stored in the database (index progress, section names) is plain Swedish.
+    - `USE_I18N` stays on only so Django's own Swedish month/weekday names and form
+      messages are used; `LANGUAGE_CODE = "sv"` and there is no locale middleware.
+    - The recipe parser accepts both `1,5` and `1.5`, so imported recipe text still parses.
 
 14. **Hosting is one process: `manage.py serve`.** It applies migrations, seeds an empty
     database, starts the scheduler thread and serves the app with waitress. No cron, no
