@@ -228,7 +228,7 @@ class Product(models.Model):
     def url(self, retailer: str = "willys") -> str:
         from core.stores import axfood
 
-        return axfood.product_url(retailer, self.code)
+        return axfood.product_url(retailer, self.code, self.name)
 
 
 class Price(models.Model):
@@ -275,7 +275,7 @@ class AppSettings(models.Model):
     retailer = models.CharField(max_length=20, choices=Retailer.choices, default=Retailer.WILLYS)
     default_servings = models.PositiveSmallIntegerField(default=2)
     index_running = models.BooleanField(default=False)
-    index_progress = models.CharField(max_length=400, blank=True)  # JSON: message id + params
+    index_progress = models.CharField(max_length=400, blank=True)
     index_error = models.CharField(max_length=300, blank=True)
     index_heartbeat = models.DateTimeField(null=True, blank=True)  # last sign of life from a run
     listed_at = models.DateTimeField(null=True, blank=True)  # last complete pass over the category listings

@@ -15,6 +15,7 @@ import datetime as dt
 import re
 import threading
 import time
+import unicodedata
 from collections.abc import Iterator
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -98,8 +99,11 @@ class Details:
     diet: str
 
 
-def product_url(retailer: str, code: str) -> str:
-    return f"{BASE_URLS[retailer]}/sortiment/p/{code}"
+def product_url(retailer: str, code: str, name: str = "") -> str:
+    """Public product page; the name slug is cosmetic but matches the chains' own links."""
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^A-Za-z0-9]+", "-", ascii_name).strip("-")
+    return f"{BASE_URLS[retailer]}/produkt/{slug + '-' if slug else ''}{code}"
 
 
 def _get(retailer: str, path: str, params: dict | None = None) -> dict:
