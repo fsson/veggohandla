@@ -1,163 +1,178 @@
 # 🌱 Veggohandla
 
-**🇸🇪 Svenska** · 🇬🇧 [English](README.en.md)
+Plan the week's vegan meals and get a ready shopping list with real products and
+prices from Willys and Hemköp, two Swedish supermarket chains.
 
-Planera veckans veganska mat och få en färdig inköpslista med riktiga varor och
-priser från Willys och Hemköp.
+![Week planner](docs/screenshots/week.png)
+![Shopping list with the cheapest product for each ingredient](docs/screenshots/shopping.png)
+![Recipes](docs/screenshots/recipes.png)
 
-- **Veckan** – lägg recept på dagarna, ändra portioner, dra mellan dagar.
-- **Recept** – skriv ingredienser som vanlig text (`500 g mjölig potatis`, `0,5 förp vegobullar`)
-  eller importera från ICA, Köket, Arla m.fl. med en länk. Medan du skriver ser du vilken
-  vara varje rad blir.
-- **Handla** – listan räknas fram automatiskt. Varje ingrediens blir den billigaste veganska
-  varan för just den mängd du behöver (750 g vegobullar → en 900 g-påse i stället för tre
-  små). Kampanjer räknas med. Vill du ha ett visst märke trycker du *Byt* – valet sparas.
-  Samma varor jämförs mellan Willys och Hemköp.
-- **Sortiment** – ett lokalt index över kedjornas matvaror. Bara veganska varor visas:
-  märkta veganska av kedjan, eller vars ingredienslista saknar animaliska ingredienser.
+<sub>Recipe photos from Wikimedia Commons:
+[Benreis](https://commons.wikimedia.org/wiki/File:Chilli_sine_carne_Zur_Tanne_Harsdorf.jpg) (CC BY-SA 4.0),
+[Israel_photo_gallery](https://commons.wikimedia.org/wiki/File:Falafel_in_a_pita.jpg) (CC BY-SA 2.0),
+[Kari Sullivan](https://commons.wikimedia.org/wiki/File:Spinach-Chickpea_Curry_(3117324894).jpg) (CC BY 2.0),
+[E4024](https://commons.wikimedia.org/wiki/File:Red_lentil_soup_from_Turkey.jpg) (CC BY-SA 4.0),
+[Andy Li](https://commons.wikimedia.org/wiki/File:Plant_balls_served_with_mashed_potatoes,_peas,_cream_sauce_-_IKEA_Southampton_2025-12-29.jpg) (CC0).
+Store product images are hidden in the screenshot.</sub>
 
-Allt körs lokalt på din dator. Inget konto, ingen molntjänst.
+- **Week** – put recipes on the days, change servings, drag between days.
+- **Recipes** – write ingredients as plain text (`500 g mjölig potatis`, `0,5 förp vegobullar`)
+  or import from ICA, Köket, Arla and others with a link. While you type you see which
+  product each line becomes.
+- **Shop** – the list is calculated automatically. Each ingredient becomes the cheapest vegan
+  product for exactly the amount you need (750 g of vegobullar → one 900 g bag instead of
+  three small ones). Promotions are included. If you want a particular brand, press *Swap* –
+  the choice is remembered. The same products are compared between Willys and Hemköp.
+- **Products** – a local index of the chains' food products. Only vegan products are shown:
+  labelled vegan by the chain, or with an ingredient list free of animal ingredients.
 
-Gränssnittet finns på svenska och engelska. Knappen **SV / EN** uppe till höger byter språk,
-och först används webbläsarens språk. Receptens, ingrediensernas och varornas namn är
-alltid på svenska, eftersom butikerna är svenska.
+Everything runs locally on your computer. No account, no cloud service.
 
-## Kom igång
+The interface is available in Swedish and English. The **SV / EN** switch in the top right
+changes language, and your browser's language is used at first. Recipe, ingredient and
+product names are always Swedish, because the stores are Swedish. The method of a recipe can
+be written in any language, but ingredient lines need the Swedish ingredient names and units
+(`dl`, `msk`, `förp` …) to be recognised.
 
-Kräver [uv](https://docs.astral.sh/uv/) (installerar rätt Python automatiskt).
+## Getting started
+
+Requires [uv](https://docs.astral.sh/uv/) (installs the right Python automatically).
 
 ```bash
 git clone https://github.com/fsson/veggohandla.git && cd veggohandla
 uv run manage.py serve
 ```
 
-Öppna <http://127.0.0.1:8000>. Första gången skapas databasen i `data/` med 111
-ingredienser och 5 veganska recept med bilder. Så länge `serve` körs hämtas sortimentet automatiskt
-varje morgon (se nedan). Vill du köra appen hela tiden, utan att ha datorn igång, passar en
-Raspberry Pi bra – se [Köra på en Raspberry Pi](#köra-på-en-raspberry-pi).
+Open <http://127.0.0.1:8000>. The first time, the database is created in `data/` with 111
+ingredients and 5 vegan recipes with photos. As long as `serve` runs, the product range is fetched
+automatically every morning (see below). To keep the app running without leaving your
+computer on, a Raspberry Pi works well – see [Running on a Raspberry Pi](#running-on-a-raspberry-pi).
 
-Receptbilderna laddas ner från [Wikimedia Commons](https://commons.wikimedia.org) när
-databasen skapas. De har fria licenser, och fotograf och licens visas på varje receptsida.
+The recipe photos are downloaded from [Wikimedia Commons](https://commons.wikimedia.org) when the
+database is created. They are openly licensed, and the photographer and licence are shown on each
+recipe page.
 
-### Hämta sortimentet
+### Fetching the product range
 
-Willys och Hemköp ber i sin robots.txt om högst ett anrop per 10 sekunder och bara
-mellan 04:00 och 08:45 UTC (05:00–09:45 svensk vintertid, 06:00–10:45 sommartid). Appen
-följer det:
+In their robots.txt, Willys and Hemköp ask for at most one request per 10 seconds and only
+between 04:00 and 08:45 UTC (05:00–09:45 Swedish winter time, 06:00–10:45 summer time). The
+app follows that:
 
-- `serve` uppdaterar sortimentet automatiskt varje morgon inom fönstret: priser och
-  kampanjer (~20 minuter) och granskning av nya varor. Du kan också trycka *Uppdatera nu*
-  under **Sortiment** eller köra `uv run manage.py index` inom fönstret.
-- För att avgöra vad som är veganskt läser appen varje varas ingredienslista, en vara per
-  anrop. Det är ~4 000 varor, men bara ~1 600 anrop ryms per morgon. Därför är sortimentet
-  helt klart först efter **tre dagars körningar**. Det gäller bara första gången – därefter
-  granskas bara nya varor, vilket tar några minuter.
-- Du behöver inte vänta tre dagar: varor som dina recept använder granskas först, så
-  inköpslistan fungerar redan efter första morgonen. Resten av sortimentet fylls på efter
-  hand och syns i **Sortiment** när det är granskat.
-- När tidsfönstret stänger pausas körningen. Inget går förlorat – nästa morgon fortsätter
-  den där den slutade.
-- Uppdateringen sker bara medan appen körs. Därför är en dator som alltid är på, som en
-  Raspberry Pi, det smidigaste.
+- `serve` updates the range automatically every morning within the window: prices and
+  promotions (~20 minutes) and checking new products. You can also press *Update now*
+  under **Products**, or run `uv run manage.py index`, within the window.
+- To decide what is vegan, the app reads each product's ingredient list, one product per
+  request. That is ~4,000 products, but only ~1,600 requests fit in a morning. The range is
+  therefore fully ready only after **three days of runs**. This only applies the first time –
+  afterwards only new products are checked, which takes a few minutes.
+- You don't have to wait three days: products your recipes use are checked first, so the
+  shopping list works after the first morning. The rest of the range fills in over time and
+  shows up under **Products** once it has been checked.
+- When the time window closes the run pauses. Nothing is lost – the next morning it
+  continues where it stopped.
+- Updating only happens while the app is running, so an always-on computer such as a
+  Raspberry Pi is the most convenient.
 
-## Köra på en Raspberry Pi
+## Running on a Raspberry Pi
 
-En Raspberry Pi 4 (vilken minnesstorlek som helst) räcker gott. Appen körs då dygnet runt,
-uppdaterar sortimentet varje morgon och nås från datorer och mobiler på ditt hemnätverk.
+A Raspberry Pi 4 (any memory size) is plenty. The app then runs around the clock, updates
+the product range every morning and can be reached from computers and phones on your home
+network.
 
-1. **Installera Raspberry Pi OS (64-bit).** Använd [Raspberry Pi Imager](https://www.raspberrypi.com/software/),
-   välj *Raspberry Pi OS Lite (64-bit)*, och ställ i inställningarna in värdnamn
-   (t.ex. `veggohandla`), användare, wifi och *Aktivera SSH*. 64-bitarsversionen krävs.
-2. **Logga in och installera git:**
+1. **Install Raspberry Pi OS (64-bit).** Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/),
+   choose *Raspberry Pi OS Lite (64-bit)*, and in the settings set a hostname
+   (e.g. `veggohandla`), a user, Wi-Fi and *Enable SSH*. The 64-bit version is required.
+2. **Log in and install git:**
 
    ```bash
-   ssh <användare>@veggohandla.local
+   ssh <user>@veggohandla.local
    sudo apt update && sudo apt install -y git
    ```
 
-3. **Hämta appen och installera den som tjänst:**
+3. **Get the app and install it as a service:**
 
    ```bash
    git clone https://github.com/fsson/veggohandla.git && cd veggohandla
    ./deploy/install.sh
    ```
 
-   Skriptet installerar uv, Python och beroenden, och sätter upp appen som en
-   systemd-tjänst som startar automatiskt (och startar om sig själv om något går fel).
-   Det tar några minuter första gången.
-4. **Öppna** <http://veggohandla.local:8000> från en dator eller mobil på samma nätverk
-   (eller `http://<pi:ns-ip-adress>:8000`).
+   The script installs uv, Python and the dependencies, and sets the app up as a systemd
+   service that starts automatically (and restarts itself if something goes wrong). It
+   takes a few minutes the first time.
+4. **Open** <http://veggohandla.local:8000> from a computer or phone on the same network
+   (or `http://<the-pi's-ip-address>:8000`).
 
-Sedan sköter den sig själv: sortimentet uppdateras varje morgon, och appen startar igen
-efter strömavbrott.
+After that it looks after itself: the range is updated every morning, and the app starts
+again after a power cut.
 
-| Vad | Kommando |
+| What | Command |
 |---|---|
-| Uppdatera till senaste versionen | `cd ~/veggohandla && git pull && ./deploy/install.sh` |
-| Se loggen | `journalctl -u veggohandla -f` |
-| Starta om / stoppa | `sudo systemctl restart veggohandla` / `sudo systemctl stop veggohandla` |
-| Annan port | `PORT=8080 ./deploy/install.sh` |
-| Säkerhetskopiera | kopiera katalogen `~/veggohandla/data/` |
+| Update to the latest version | `cd ~/veggohandla && git pull && ./deploy/install.sh` |
+| View the log | `journalctl -u veggohandla -f` |
+| Restart / stop | `sudo systemctl restart veggohandla` / `sudo systemctl stop veggohandla` |
+| Another port | `PORT=8080 ./deploy/install.sh` |
+| Back up | copy the directory `~/veggohandla/data/` |
 
-**Nå appen när du inte är hemma:** För att nå appen utifrån kan du sätta upp en egen VPN på Pi:n,
-till exempel [PiVPN](https://pivpn.io) med WireGuard.
+**Reaching the app when you're not home:** To access the app remotely you can set up your own VPN on the Pi,
+for example [PiVPN](https://pivpn.io) with WireGuard.
 
-## Hur varorna väljs
+## How products are chosen
 
-Varje ingrediens har en regel för vilka varor som räknas som den, t.ex.
-`krossade tomat -chili -vitlök` (alla ord ska finnas i varans namn, `-ord` utesluter).
-Reglerna finns i `core/seed_data.py`. Bland de matchande varorna väljs den som blir
-billigast för mängden, med hela förpackningar, lösvikt per kg och kampanjer som
-"2 för 46 kr" (bara om du köper minst 2).
+Each ingredient has a rule for which products count as it, e.g.
+`krossade tomat -chili -vitlök` (all words must be in the product name, `-word` excludes).
+The rules live in `core/seed_data.py`. Among the matching products, the one that is cheapest
+for the amount is picked, counting whole packages, loose weight per kg and promotions like
+"2 för 46 kr" (only if you buy at least 2).
 
-Nya ingredienser som du skriver i ett recept skapas automatiskt och matchar varor med
-samma namn.
+New ingredients you type in a recipe are created automatically and match products with the
+same name.
 
-## Vegankontrollen
+## The vegan check
 
-Kedjornas veganmärkning är ofullständig. Därför läses varje varas ingredienslista en gång:
+The chains' vegan labelling is incomplete, so each product's ingredient list is read once:
 
-- märkt vegansk → med
-- ingredienslista utan animaliska ord (mjölk, ägg, vassle, honung, gelatin, karmin, D3 …) → med
-- animaliskt ord hittat → aldrig med
-- ingen ingredienslista → bara med om det är obearbetad frukt eller grönt
+- labelled vegan → included
+- ingredient list without animal words (mjölk, ägg, vassle, honung, gelatin, karmin, D3 …) → included
+- an animal word found → never included
+- no ingredient list → included only if it is unprocessed fruit or vegetables
 
-"Kan innehålla spår av mjölk" räknas inte, eftersom det gäller allergi och inte innehåll.
-Under **Sortiment** står det för varje vara varför den räknas som vegansk.
+"Kan innehålla spår av mjölk" (may contain traces of milk) doesn't count, since it is about
+allergy and not about contents. Under **Products** each product shows why it counts as vegan.
 
-## Data och säkerhetskopior
+## Data and backups
 
-Allt (databas och bilder) ligger i `data/`. Kopiera katalogen för att ta en backup.
-Katalogen ignoreras av git.
+Everything (database and images) lives in `data/`. Copy that directory to make a backup.
+The directory is ignored by git.
 
-## Om butiksdatan
+## About the store data
 
-Willys och Hemköp (Axfood) har inget officiellt API. Appen använder samma öppna
-JSON-anrop som deras webbplatser – bara när du indexerar, i den takt och under de tider
-deras robots.txt anger, och resultatet sparas lokalt. Willys villkor tillåter användning av
-innehållet *endast för personligt bruk*: kör appen själv, för dig själv. Det kan sluta fungera när som helst och kedjornas villkor gäller. Recept,
-planering och inköpslista fungerar ändå, med de priser som senast hämtades.
+Willys and Hemköp (Axfood) have no official API. The app uses the same open JSON calls as
+their websites – only when you index, at the pace and during the hours their robots.txt
+specifies, and the result is stored locally. Willys' terms allow use of the content *only for
+personal use*: run the app yourself, for yourself. It may stop working at any time and the
+chains' terms apply. Recipes, planning and the shopping list keep working with the prices
+fetched last.
 
-## Utveckling
+## Development
 
 ```bash
-VEGGOHANDLA_DEBUG=1 uv run manage.py runserver   # utvecklingsserver med felsidor och omladdning
-uv run pytest            # 140+ tester: enheter, sammanslagning, vegankontroll, varuval, vyer, översättning
+VEGGOHANDLA_DEBUG=1 uv run manage.py runserver   # development server with error pages and reloading
+uv run pytest            # 140+ tests: units, merging, vegan check, product choice, views, translation
 ```
 
-Se [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (på engelska) för hur det hänger ihop.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how it fits together.
 
-### Översättningar
+### Translations
 
-Svenska är källspråket: de svenska texterna i koden och mallarna är själva nycklarna, och
-`locale/en/` innehåller den engelska översättningen. När du ändrar en text:
+Swedish is the source language: the Swedish texts in the code and templates are the keys, and
+`locale/en/` holds the English translation. When you change a text:
 
 ```bash
 uv run manage.py makemessages -l en -i .venv -i data -i docs --no-obsolete --no-location
-# översätt nya poster i locale/en/LC_MESSAGES/django.po; för ändrade texter, skriv om
-# översättningen och ta bort både "#, fuzzy" och raden "#| msgid …" med den gamla texten
-uv run manage.py compilemessages -l en     # skapar django.mo, som checkas in
+# translate new entries in locale/en/LC_MESSAGES/django.po; for changed texts, rewrite the
+# translation and remove both "#, fuzzy" and the "#| msgid …" line holding the old text
+uv run manage.py compilemessages -l en     # builds django.mo, which is committed
 ```
 
-Ett test (`core/tests/test_i18n.py`) misslyckas om en text saknar översättning, om
-`django.mo` är gammal eller om svensk gränssnittstext läcker igenom på engelska sidor.
+A test (`core/tests/test_i18n.py`) fails if a text is untranslated, if `django.mo` is stale,
+or if Swedish interface text leaks through on the English pages.

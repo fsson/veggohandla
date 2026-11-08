@@ -43,7 +43,7 @@ deploy/install.sh    Installs/updates the app as a systemd service (e.g. on a Ra
 
 Language: the app is for Swedish users and Swedish stores. The seed data (ingredient and
 recipe names) and the product names are Swedish content. The interface is Swedish with an
-English translation (see decision 13), and there is a Swedish and an English README. Code,
+English translation (see decision 13). The README is English. Code,
 comments and these docs are English.
 
 ## Data model
