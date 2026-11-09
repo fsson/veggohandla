@@ -1,3 +1,4 @@
+
 #!/usr/bin/env bash
 # Install or update Veggohandla as a systemd service – e.g. on a Raspberry Pi.
 #
@@ -43,26 +44,26 @@ if [ "${1:-}" = "--print-unit" ]; then
 fi
 
 if [ "$(id -u)" -eq 0 ]; then
-  echo "Kör skriptet som vanlig användare, inte som root (sudo används där det behövs)." >&2
+  echo "Run this script as a regular user, not as root (sudo is used where needed)." >&2
   exit 1
 fi
 if ! command -v systemctl >/dev/null; then
-  echo "Hittar inte systemd (systemctl). Kör appen med: uv run manage.py serve" >&2
+  echo "systemd (systemctl) not found. Run the app with: uv run manage.py serve" >&2
   exit 1
 fi
 
 if ! command -v uv >/dev/null && [ ! -x "$HOME/.local/bin/uv" ]; then
-  echo "==> Installerar uv (pakethanterare för Python)"
+  echo "==> Installing uv (Python package manager)"
   curl -LsSf https://astral.sh/uv/install.sh | sh
 fi
 UV="$(command -v uv || echo "$HOME/.local/bin/uv")"
 
-echo "==> Installerar Python och beroenden"
+echo "==> Installing Python and dependencies"
 cd "$APP_DIR"
 "$UV" sync --frozen --no-dev
 "$APP_DIR/.venv/bin/python" manage.py check
 
-echo "==> Installerar och startar tjänsten ${SERVICE}"
+echo "==> Installing and starting the ${SERVICE} service"
 unit | sudo tee "/etc/systemd/system/${SERVICE}.service" >/dev/null
 sudo systemctl daemon-reload
 sudo systemctl enable "${SERVICE}" >/dev/null
@@ -70,7 +71,7 @@ sudo systemctl restart "${SERVICE}"
 
 IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 echo
-echo "Klart! Veggohandla körs och startar automatiskt när datorn startar."
-echo "  Öppna:      http://$(hostname).local:${PORT}   eller   http://${IP:-<ip-adress>}:${PORT}"
-echo "  Logg:       journalctl -u ${SERVICE} -f"
-echo "  Uppdatera:  git pull && ./deploy/install.sh"
+echo "Done! Veggohandla is running and will start automatically when the computer boots."
+echo "  Open:       http://$(hostname).local:${PORT}   or   http://${IP:-<ip-address>}:${PORT}"
+echo "  Logs:       journalctl -u ${SERVICE} -f"
+echo "  Update:     git pull && ./deploy/install.sh"
