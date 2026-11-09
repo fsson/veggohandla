@@ -167,9 +167,7 @@ def test_incompatible_units_merged_with_facts():
 
 def test_package_merges_with_mass():
     facts = {MEATBALLS: IngredientFacts(package_amount=D("300"), package_dimension=MASS)}
-    items = aggregate(
-        [Line(MEATBALLS, D("0.5"), "förp"), Line(MEATBALLS, D("200"), "g")], facts
-    )
+    items = aggregate([Line(MEATBALLS, D("0.5"), "förp"), Line(MEATBALLS, D("200"), "g")], facts)
     assert items[MEATBALLS].display() == "350 g"
     assert items[MEATBALLS].packages == 2
 
@@ -232,16 +230,25 @@ def test_plural_units():
 
 def test_purchase_package_does_not_change_recipe_package():
     """'1 förp krossade tomater' = 400 g even when buying a 3-pack of 1170 g."""
-    facts = {TOMATO: IngredientFacts(
-        package_amount=D("400"), package_dimension=MASS,
-        purchase_amount=D("1170"), purchase_dimension=MASS,
-    )}
+    facts = {
+        TOMATO: IngredientFacts(
+            package_amount=D("400"),
+            package_dimension=MASS,
+            purchase_amount=D("1170"),
+            purchase_dimension=MASS,
+        )
+    }
     items = aggregate([Line(TOMATO, D("1"), "förp"), Line(TOMATO, D("400"), "g")], facts)
     assert items[TOMATO].display() == "800 g"
     assert items[TOMATO].packages == 1  # one 3-pack is enough
-    items = aggregate([Line(TOMATO, D("3"), "förp")], {TOMATO: IngredientFacts(
-        package_amount=D("400"), package_dimension=MASS,
-        purchase_amount=D("250"), purchase_dimension=MASS)})
+    items = aggregate(
+        [Line(TOMATO, D("3"), "förp")],
+        {
+            TOMATO: IngredientFacts(
+                package_amount=D("400"), package_dimension=MASS, purchase_amount=D("250"), purchase_dimension=MASS
+            )
+        },
+    )
     assert items[TOMATO].packages == 5  # 1200 g / 250 g
 
 
@@ -296,8 +303,9 @@ def test_classify_is_strict():
 def test_merge_with_product_size():
     """'1 förp + 200 g' can only be merged once the product's size is known."""
     item = AggregatedItem(1, {PACKAGE: D("1"), MASS: D("200")})
-    facts = IngredientFacts(package_amount=D("500"), package_dimension=MASS,
-                            purchase_amount=D("500"), purchase_dimension=MASS)
+    facts = IngredientFacts(
+        package_amount=D("500"), package_dimension=MASS, purchase_amount=D("500"), purchase_dimension=MASS
+    )
     merged = merge_with(item, facts)
     assert merged.amounts == {MASS: D("700")} and merged.packages == 2
     assert item.amounts == {PACKAGE: D("1"), MASS: D("200")}  # the original is untouched

@@ -15,7 +15,11 @@ def R(name, servings, minutes, ingredients, instructions, description=""):
 
 # Recipes that used to be seed data and that the tests rely on (the seed now has only 5).
 TEST_RECIPES = [
-    R("Vegobullar med pasta och tomatsås", 2, 25, """
+    R(
+        "Vegobullar med pasta och tomatsås",
+        2,
+        25,
+        """
 0,5 förp vegobullar
 250 g pasta
 1 förp krossade tomater
@@ -24,12 +28,19 @@ TEST_RECIPES = [
 1 msk olivolja
 Salt
 Svartpeppar
-""", """
+""",
+        """
 Koka pastan enligt förpackningen.
 Fräs lök och vitlök i olivolja. Tillsätt krossade tomater och låt puttra 10 minuter.
 Bryn vegobullarna och vänd ner dem i såsen. Smaka av med salt och peppar.
-""", "Snabb vardagspasta med krämig tomatsås."),
-    R("Tacos med vegofärs", 4, 25, """
+""",
+        "Snabb vardagspasta med krämig tomatsås.",
+    ),
+    R(
+        "Tacos med vegofärs",
+        4,
+        25,
+        """
 400 g vegofärs
 1 förp tacokrydda
 8 tortillabröd
@@ -42,12 +53,18 @@ Bryn vegobullarna och vänd ner dem i såsen. Smaka av med salt och peppar.
 1 förp tacosås
 2 dl havrefraiche
 100 g vegansk riven ost
-""", """
+""",
+        """
 Stek vegofärsen, tillsätt tacokrydda och lite vatten. Låt koka ihop.
 Hacka grönsakerna och skiva avokadon.
 Värm tortillabröden och duka fram allt.
-"""),
-    R("Tofuwok med nudlar", 4, 25, """
+""",
+    ),
+    R(
+        "Tofuwok med nudlar",
+        4,
+        25,
+        """
 1 förp tofu
 250 g risnudlar
 1 förp wokgrönsaker
@@ -58,12 +75,14 @@ Värm tortillabröden och duka fram allt.
 2 msk sweet chilisås
 1 msk rapsolja
 0,5 knippe salladslök
-""", """
+""",
+        """
 Pressa tofun torr och skär i tärningar. Stek gyllene i rapsolja.
 Koka eller blötlägg nudlarna enligt förpackningen.
 Woka grönsaker, vitlök och ingefära på hög värme.
 Vänd ner nudlar, tofu, soja, sesamolja och sweet chili. Toppa med salladslök.
-"""),
+""",
+    ),
 ]
 
 

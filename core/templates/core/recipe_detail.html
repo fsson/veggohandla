@@ -4,7 +4,6 @@
 <div class="recipe-layout">
   <div class="stack">
     <div class="hero">{% include "core/partials/recipe_image.html" with cls="" %}
-      {% if recipe.image and recipe.image_credit %}<p class="tiny muted" style="margin-top:4px">Foto: {% if recipe.image_source %}<a class="link" href="{{ recipe.image_source }}" target="_blank" rel="noopener">{{ recipe.image_credit }}</a>{% else %}{{ recipe.image_credit }}{% endif %}</p>{% endif %}
     </div>
     <div class="stack-sm">
       <h1>{{ recipe.name }}</h1>

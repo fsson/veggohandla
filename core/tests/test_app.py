@@ -5,7 +5,6 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
-from core.tests.conftest import add_test_recipes
 from core.models import (
     AppSettings,
     Category,
@@ -22,6 +21,7 @@ from core.services import catalog, importer, index, shopping
 from core.services.recipes import find_ingredient, get_or_create_ingredient, set_ingredients_from_text
 from core.stores import axfood
 from core.stores.axfood import Details, ProductData
+from core.tests.conftest import add_test_recipes
 
 WEEK = dt.date(2026, 11, 2)  # a Monday
 
@@ -48,8 +48,15 @@ def product(code, name, category, size, willys=None, hemkop=None, vegan=True, pe
     if per_kg:
         amount, unit = D(1000), "g"
     p = Product.objects.create(
-        code=code, name=name, category=category, size_text=size, size_amount=amount, size_unit=unit,
-        price_per_kg=per_kg, search_text=index.normalize(name), vegan=vegan,
+        code=code,
+        name=name,
+        category=category,
+        size_text=size,
+        size_amount=amount,
+        size_unit=unit,
+        price_per_kg=per_kg,
+        search_text=index.normalize(name),
+        vegan=vegan,
     )
     now = timezone.now()
     for retailer, price in (("willys", willys), ("hemkop", hemkop)):
@@ -71,63 +78,12 @@ def test_seed_creates_no_unknown_ingredients(seeded):
     assert len(names) == 5 and names <= set(Recipe.objects.values_list("name", flat=True))
     # Every recipe line (seed and test recipes) matched a seeded ingredient – no new ones were created.
     assert Ingredient.objects.count() == len(seed_data.INGREDIENTS)
-    assert all(r["image"] and r["image"]["credit"] and r["image"]["source"] for r in seed_data.RECIPES)
+    assert not any("image" in r for r in seed_data.RECIPES)
 
 
-def _jpeg() -> bytes:
-    import io
-
-    from PIL import Image
-
-    buf = io.BytesIO()
-    Image.new("RGB", (40, 30), "orange").save(buf, "JPEG")
-    return buf.getvalue()
-
-
-def test_seed_downloads_photos_with_credit(db, monkeypatch, settings, tmp_path):
-    from core import seed_data
-    from core.services import importer
-
-    settings.MEDIA_ROOT = tmp_path
-    urls = []
-    monkeypatch.setattr(importer, "download_image", lambda url, max_bytes=0: urls.append(url) or _jpeg())
+def test_seed_recipes_have_no_images(db):
     call_command("seed", stdout=open("/dev/null", "w"))
-    assert urls == [r["image"]["url"] for r in seed_data.RECIPES]
-    chili = Recipe.objects.get(name="Chili sin carne")
-    assert chili.image and chili.image.name.endswith(".webp")
-    assert chili.image_credit == "Benreis, CC BY-SA 4.0" and "commons.wikimedia.org" in chili.image_source
-
-    # Running seed again downloads nothing; a recipe without a photo gets one.
-    urls.clear()
-    Recipe.objects.filter(name="Falafel i pitabröd").update(image="")
-    call_command("seed", stdout=open("/dev/null", "w"))
-    assert len(urls) == 1
-
-
-def test_seed_without_network_still_works(db, capsys):
-    # (download_image returns None in tests, like when the photo can't be fetched)
-    call_command("seed")
-    out = capsys.readouterr()
-    assert "5 nya recept, 0 bilder" in out.out and "Kunde inte hämta bilden" in out.err
     assert Recipe.objects.count() == 5 and not Recipe.objects.exclude(image="").exists()
-
-
-def test_photo_credit_is_shown_and_cleared_with_the_photo(seeded, client, settings, tmp_path):
-    settings.MEDIA_ROOT = tmp_path
-    from django.core.files.base import ContentFile
-
-    r = Recipe.objects.get(name="Chili sin carne")
-    r.image.save("chili.jpg", ContentFile(_jpeg()), save=False)
-    r.image_credit, r.image_source = "Benreis, CC BY-SA 4.0", "https://commons.wikimedia.org/wiki/File:X.jpg"
-    r.save()
-    page = client.get(f"/recept/{r.pk}/").content.decode()
-    assert "Foto:" in page and "Benreis, CC BY-SA 4.0" in page and "File:X.jpg" in page
-    client.post(f"/recept/{r.pk}/redigera/", {
-        "name": r.name, "servings": r.servings, "ingredient_text": r.ingredient_text(),
-        "instructions": "", "description": "", "remove_image": "on",
-    })
-    r.refresh_from_db()
-    assert not r.image and r.image_credit == "" and r.image_source == ""
 
 
 def test_seed_is_idempotent_and_updates_match_rules(seeded):
@@ -181,7 +137,9 @@ def test_alias_implied_unit(seeded):
     r = Recipe.objects.create(name="T", servings=2)
     set_ingredients_from_text(r, "2 vitlöksklyftor\n1 vitlök\n3 klyftor vitlök")
     assert [(x.ingredient.name, x.unit) for x in r.ingredients.all()] == [
-        ("Vitlök", "klyfta"), ("Vitlök", "st"), ("Vitlök", "klyfta"),
+        ("Vitlök", "klyfta"),
+        ("Vitlök", "st"),
+        ("Vitlök", "klyfta"),
     ]
 
 
@@ -211,7 +169,9 @@ def test_servings_scale_list(seeded):
 
 def test_water_and_other_weeks_excluded(seeded):
     plan("Röd linssoppa med kokos", 0, 4)
-    PlannedMeal.objects.create(date=WEEK + dt.timedelta(days=7), recipe=Recipe.objects.get(name="Tacos med vegofärs"), servings=4)
+    PlannedMeal.objects.create(
+        date=WEEK + dt.timedelta(days=7), recipe=Recipe.objects.get(name="Tacos med vegofärs"), servings=4
+    )
     rows = rows_by_name(shopping.build(WEEK, "willys"))
     assert "Vatten" not in rows
     assert "Tortillabröd" not in rows
@@ -395,25 +355,38 @@ def test_extra_items(seeded, client):
 
 def fake_store(monkeypatch, *, fail_hemkop=False):
     tree = {
-        "willys": [{"url": "vegetariskt", "title": "Vegetariskt",
-                    "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]},
-                   {"url": "kott-chark-och-fagel", "title": "Kött",
-                    "children": [{"url": "kott-chark-och-fagel/kott", "title": "Kött"}]}],
-        "hemkop": [{"url": "vegetariskt", "title": "Vegetariskt",
-                    "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]}],
+        "willys": [
+            {"url": "vegetariskt", "title": "Vegetariskt", "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]},
+            {
+                "url": "kott-chark-och-fagel",
+                "title": "Kött",
+                "children": [{"url": "kott-chark-och-fagel/kott", "title": "Kött"}],
+            },
+        ],
+        "hemkop": [
+            {"url": "vegetariskt", "title": "Vegetariskt", "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]}
+        ],
     }
     listing = {
         ("willys", "vegetariskt/tofu"): [
-            ProductData("willys", "1_ST", "Tofu Naturell", size_text="400g", size_amount=D(400), size_unit="g", price=D("25.90")),
-            ProductData("willys", "2_ST", "Tofu med Ägg", size_text="400g", size_amount=D(400), size_unit="g", price=D("19.90")),
+            ProductData(
+                "willys", "1_ST", "Tofu Naturell", size_text="400g", size_amount=D(400), size_unit="g", price=D("25.90")
+            ),
+            ProductData(
+                "willys", "2_ST", "Tofu med Ägg", size_text="400g", size_amount=D(400), size_unit="g", price=D("19.90")
+            ),
         ],
         ("hemkop", "vegetariskt/tofu"): [
-            ProductData("hemkop", "1_ST", "Tofu Naturell", size_text="400g", size_amount=D(400), size_unit="g", price=D("27.50")),
+            ProductData(
+                "hemkop", "1_ST", "Tofu Naturell", size_text="400g", size_amount=D(400), size_unit="g", price=D("27.50")
+            ),
             ProductData("hemkop", "9_ST", "Bara hos Hemköp", price=D("10")),
         ],
     }
-    details = {"1_ST": Details("7310000000001", "Sojabönor, vatten. Kan innehålla spår av mjölk.", ""),
-               "2_ST": Details("7310000000002", "Sojabönor, ÄGG", "")}
+    details = {
+        "1_ST": Details("7310000000001", "Sojabönor, vatten. Kan innehålla spår av mjölk.", ""),
+        "2_ST": Details("7310000000002", "Sojabönor, ÄGG", ""),
+    }
     calls = []
 
     def list_category(retailer, slug):
@@ -449,28 +422,39 @@ def test_index_run_builds_vegan_catalog(db, monkeypatch):
     # Second run: no new detail requests, and expired prices disappear.
     monkeypatch.setattr(axfood, "fetch_details", lambda r, c: pytest.fail("ska inte granskas igen"))
     Price.objects.filter(product=tofu, retailer="willys").update(seen_at=timezone.now() - dt.timedelta(days=9))
-    Price.objects.create(product=Product.objects.get(code="2_ST"), retailer="hemkop", price=1,
-                         seen_at=timezone.now() - dt.timedelta(days=9))
+    Price.objects.create(
+        product=Product.objects.get(code="2_ST"),
+        retailer="hemkop",
+        price=1,
+        seen_at=timezone.now() - dt.timedelta(days=9),
+    )
     index.run(force_listings=True)
     assert not Price.objects.filter(product__code="2_ST", retailer="hemkop").exists()
     assert Price.objects.get(product=tofu, retailer="willys").seen_at > timezone.now() - dt.timedelta(minutes=1)
 
 
 def test_visit_time_window_from_robots_txt():
-    utc = dt.timezone.utc
+    utc = dt.UTC
     assert axfood.CRAWL_DELAY == 10
     assert axfood.in_visit_time(dt.datetime(2026, 11, 8, 4, 0, tzinfo=utc))
     assert axfood.in_visit_time(dt.datetime(2026, 11, 8, 8, 44, tzinfo=utc))
     assert not axfood.in_visit_time(dt.datetime(2026, 11, 8, 8, 45, tzinfo=utc))
     assert not axfood.in_visit_time(dt.datetime(2026, 11, 8, 12, 0, tzinfo=utc))
-    assert axfood.next_visit_time(dt.datetime(2026, 11, 8, 12, 0, tzinfo=utc)) == dt.datetime(2026, 11, 9, 4, 0, tzinfo=utc)
-    assert axfood.next_visit_time(dt.datetime(2026, 11, 8, 2, 0, tzinfo=utc)) == dt.datetime(2026, 11, 8, 4, 0, tzinfo=utc)
+    assert axfood.next_visit_time(dt.datetime(2026, 11, 8, 12, 0, tzinfo=utc)) == dt.datetime(
+        2026, 11, 9, 4, 0, tzinfo=utc
+    )
+    assert axfood.next_visit_time(dt.datetime(2026, 11, 8, 2, 0, tzinfo=utc)) == dt.datetime(
+        2026, 11, 8, 4, 0, tzinfo=utc
+    )
 
 
 def test_requests_are_paced_per_robots_txt(monkeypatch):
     class Reply:
-        def raise_for_status(self): pass
-        def json(self): return {}
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {}
 
     slept = []
     monkeypatch.setattr(axfood.httpx, "get", lambda *a, **k: Reply())
@@ -481,12 +465,18 @@ def test_requests_are_paced_per_robots_txt(monkeypatch):
     axfood._get("willys", "/b")
     assert len(slept) == 1 and 9 < slept[0] <= 10  # the second request waited ~10 s
 
+
 def test_product_links_point_at_the_chains_product_pages():
-    assert axfood.product_url("willys", "101233933_KG", "Bananer Ekologiska Klass 1") == \
-        "https://www.willys.se/produkt/Bananer-Ekologiska-Klass-1-101233933_KG"
-    assert axfood.product_url("hemkop", "101_ST", "Havredryck Barista, Äpple") == \
-        "https://www.hemkop.se/produkt/Havredryck-Barista-Apple-101_ST"
+    assert (
+        axfood.product_url("willys", "101233933_KG", "Bananer Ekologiska Klass 1")
+        == "https://www.willys.se/produkt/Bananer-Ekologiska-Klass-1-101233933_KG"
+    )
+    assert (
+        axfood.product_url("hemkop", "101_ST", "Havredryck Barista, Äpple")
+        == "https://www.hemkop.se/produkt/Havredryck-Barista-Apple-101_ST"
+    )
     assert axfood.product_url("willys", "101_ST") == "https://www.willys.se/produkt/101_ST"
+
 
 def test_no_requests_outside_visit_time(db, monkeypatch):
     monkeypatch.setattr(axfood, "in_visit_time", lambda now=None: False)
@@ -585,11 +575,24 @@ def test_pages_render(seeded, client):
     pasta = Ingredient.objects.get(name="Pasta")
     week = week_start(dt.date.today()).isoformat()
     for url in [
-        "/recept/", "/recept/?q=tofu", "/recept/ny/", f"/recept/{r.pk}/", f"/recept/{r.pk}/?portioner=7",
-        f"/recept/{r.pk}/redigera/", "/recept/importera/", f"/vecka/{WEEK}/", f"/vecka/{WEEK}/sammanfattning/",
-        f"/handla/{WEEK}/", f"/handla/{WEEK}/rad/{pasta.pk}/vara/?q=fusilli",
-        f"/handla/{WEEK}/extra/sok/?q=pasta", f"/maltid/valj/?date={week}", "/sortiment/",
-        "/sortiment/?q=pasta", "/sortiment/?kategori=skafferi/pasta-ris-och-matgryn", "/sortiment/?kategori=skafferi", "/sortiment/status/",
+        "/recept/",
+        "/recept/?q=tofu",
+        "/recept/ny/",
+        f"/recept/{r.pk}/",
+        f"/recept/{r.pk}/?portioner=7",
+        f"/recept/{r.pk}/redigera/",
+        "/recept/importera/",
+        f"/vecka/{WEEK}/",
+        f"/vecka/{WEEK}/sammanfattning/",
+        f"/handla/{WEEK}/",
+        f"/handla/{WEEK}/rad/{pasta.pk}/vara/?q=fusilli",
+        f"/handla/{WEEK}/extra/sok/?q=pasta",
+        f"/maltid/valj/?date={week}",
+        "/sortiment/",
+        "/sortiment/?q=pasta",
+        "/sortiment/?kategori=skafferi/pasta-ris-och-matgryn",
+        "/sortiment/?kategori=skafferi",
+        "/sortiment/status/",
     ]:
         assert client.get(url).status_code == 200, url
     assert client.get("/").status_code == 302
@@ -612,7 +615,9 @@ def test_category_tree_and_top_level_filter(db, client):
     Product.objects.filter(code="c").update(category_name="Frukt & Grönt › Grönsaker")
     tree = {t.slug: t for t in catalog.category_tree("willys")}
     assert tree["skafferi"].count == 2 and [c.name for c in tree["skafferi"].children] == [
-        "Pasta, ris & matgryn", "Torra baljväxter"]
+        "Pasta, ris & matgryn",
+        "Torra baljväxter",
+    ]
     html = client.get("/sortiment/?kategori=skafferi").content.decode()
     assert "Fusilli Pasta" in html and "Röda Linser" in html and "Gurka</strong>" not in html
     html = client.get("/sortiment/?kategori=skafferi/torra-baljvaxter").content.decode()
@@ -645,10 +650,16 @@ def test_planner_flow_remembers_servings(seeded, client):
 
 
 def test_recipe_create_via_form(seeded, client):
-    resp = client.post("/recept/ny/", {
-        "name": "Snabbsallad", "servings": 2, "ingredient_text": "1 gurka\n2 tomater",
-        "instructions": "", "description": "",
-    })
+    resp = client.post(
+        "/recept/ny/",
+        {
+            "name": "Snabbsallad",
+            "servings": 2,
+            "ingredient_text": "1 gurka\n2 tomater",
+            "instructions": "",
+            "description": "",
+        },
+    )
     assert resp.status_code == 302
     assert Recipe.objects.get(name="Snabbsallad").ingredients.count() == 2
 
@@ -665,8 +676,17 @@ def test_every_category_has_store_categories_except_other(seeded):
 
 
 def test_default_crawl_covers_everything_but_meat_fish_and_non_food():
-    tree = [{"url": u, "title": u, "children": [{"url": f"{u}/x", "title": "x"}]} for u in
-            ("fryst", "mejeri-ost-och-agg", "dryck", "kott-chark-och-fagel", "fisk-och-skaldjur", "hem-och-hushall")]
+    tree = [
+        {"url": u, "title": u, "children": [{"url": f"{u}/x", "title": "x"}]}
+        for u in (
+            "fryst",
+            "mejeri-ost-och-agg",
+            "dryck",
+            "kott-chark-och-fagel",
+            "fisk-och-skaldjur",
+            "hem-och-hushall",
+        )
+    ]
     slugs = [s for s, _ in index.resolve_sections(tree, None)]
     assert slugs == ["fryst/x", "mejeri-ost-och-agg/x", "dryck/x"]
     assert [s for s, _ in index.resolve_sections(tree, {"fryst": None})] == ["fryst/x"]

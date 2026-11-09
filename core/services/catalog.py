@@ -139,7 +139,7 @@ def offer(ingredient: Ingredient, product: Product, item: AggregatedItem | None,
     need = merge_with(item, facts) if item and item.amounts else None
     if product.price_per_kg:
         if need and len(need.amounts) == 1:
-            (dim, amount), = need.amounts.items()
+            ((dim, amount),) = need.amounts.items()
             f = conversion_factor(dim, MASS, facts)
             if f is not None:
                 kg = amount * f / 1000
@@ -154,19 +154,27 @@ def offer(ingredient: Ingredient, product: Product, item: AggregatedItem | None,
 def _rank(o: Offer) -> tuple:
     # Calculable first, then cheapest; on a tie: least waste (fewest packages),
     # then shortest name (the "plain" variant before flavoured ones).
-    return (not o.exact, o.cost is None, o.cost or Decimal(0), o.packages or 0,
-            len(o.product.search_text.split()), o.product.name)
+    return (
+        not o.exact,
+        o.cost is None,
+        o.cost or Decimal(0),
+        o.packages or 0,
+        len(o.product.search_text.split()),
+        o.product.name,
+    )
 
 
-def offers(ingredient: Ingredient, item: AggregatedItem | None, retailer: str,
-           products: list[Product] | None = None) -> list[Offer]:
+def offers(
+    ingredient: Ingredient, item: AggregatedItem | None, retailer: str, products: list[Product] | None = None
+) -> list[Offer]:
     products = candidates(ingredient, retailer) if products is None else products
     found = [o for p in products if (o := offer(ingredient, p, item, retailer))]
     return sorted(found, key=_rank)
 
 
-def choose(ingredient: Ingredient, item: AggregatedItem | None, retailer: str,
-           ranked: list[Offer] | None = None) -> tuple[Offer | None, bool]:
+def choose(
+    ingredient: Ingredient, item: AggregatedItem | None, retailer: str, ranked: list[Offer] | None = None
+) -> tuple[Offer | None, bool]:
     """(chosen product, chosen by the user?). The user's choice applies if the chain stocks the product."""
     ranked = offers(ingredient, item, retailer) if ranked is None else ranked
     if ingredient.preferred_code:
@@ -191,9 +199,12 @@ def category_tree(retailer: str) -> list[CategoryNode]:
     """The store's categories as a tree (top -> sub) with the number of priced vegan products."""
     from django.db.models import Count
 
-    rows = (Product.objects.filter(vegan=True, prices__retailer=retailer, prices__price__isnull=False)
-            .values("category", "category_name").annotate(n=Count("id", distinct=True))
-            .order_by("category_name"))
+    rows = (
+        Product.objects.filter(vegan=True, prices__retailer=retailer, prices__price__isnull=False)
+        .values("category", "category_name")
+        .annotate(n=Count("id", distinct=True))
+        .order_by("category_name")
+    )
     tops: dict[str, CategoryNode] = {}
     for r in rows:
         top_slug = r["category"].split("/")[0]

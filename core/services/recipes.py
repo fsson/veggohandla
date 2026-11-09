@@ -29,12 +29,7 @@ def resolve(name: str) -> tuple[Ingredient | None, str]:
     ing = Ingredient.objects.annotate(lname=Lower("name")).filter(lname=key).first()
     if ing:
         return ing, ""
-    alias = (
-        IngredientAlias.objects.annotate(lname=Lower("name"))
-        .filter(lname=key)
-        .select_related("ingredient")
-        .first()
-    )
+    alias = IngredientAlias.objects.annotate(lname=Lower("name")).filter(lname=key).select_related("ingredient").first()
     return (alias.ingredient, alias.implied_unit) if alias else (None, "")
 
 
@@ -108,7 +103,5 @@ def set_ingredients_from_text(recipe: Recipe, text: str) -> list[Ingredient]:
 def search_recipes(query: str = ""):
     qs = Recipe.objects.all()
     if query:
-        qs = qs.filter(
-            Q(name__icontains=query) | Q(ingredients__ingredient__name__icontains=query)
-        ).distinct()
+        qs = qs.filter(Q(name__icontains=query) | Q(ingredients__ingredient__name__icontains=query)).distinct()
     return qs

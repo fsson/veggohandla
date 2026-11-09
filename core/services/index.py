@@ -45,8 +45,21 @@ WILLYS_SECTIONS: dict[str, list[str] | None] | None = None
 HEMKOP_SECTIONS: dict[str, list[str] | None] | None = None
 # Words in a top category's slug that mark it as never vegan or not food.
 SKIPPED_TOP_WORDS = (
-    "kott", "fisk", "fagel", "chark", "skaldjur",  # animal products
-    "hushall", "hygien", "apotek", "skonhet", "kosmetik", "djur", "blommor", "tobak", "tvatt", "barnvard",  # non-food
+    "kott",
+    "fisk",
+    "fagel",
+    "chark",
+    "skaldjur",  # animal products
+    "hushall",
+    "hygien",
+    "apotek",
+    "skonhet",
+    "kosmetik",
+    "djur",
+    "blommor",
+    "tobak",
+    "tvatt",
+    "barnvard",  # non-food
 )
 
 RECHECK_AFTER = dt.timedelta(days=120)  # ingredient lists rarely change
@@ -96,8 +109,13 @@ def _save_price(product: Product, pd: axfood.ProductData, now) -> None:
         product=product,
         retailer=pd.retailer,
         defaults=dict(
-            price=pd.price, compare_price=pd.compare_price, promo_price=pd.promo_price,
-            promo_min=pd.promo_min, promo_text=pd.promo_text, promo_until=pd.promo_until, seen_at=now,
+            price=pd.price,
+            compare_price=pd.compare_price,
+            promo_price=pd.promo_price,
+            promo_min=pd.promo_min,
+            promo_text=pd.promo_text,
+            promo_until=pd.promo_until,
+            seen_at=now,
         ),
     )
 
@@ -126,9 +144,7 @@ def apply_details(product: Product, details: axfood.Details) -> None:
     product.ingredients = details.ingredients
     product.diet = details.diet[:80]
     product.checked_at = timezone.now()
-    product.vegan, product.vegan_reason = classify(
-        product.diet, product.ingredients, product.category, product.name
-    )
+    product.vegan, product.vegan_reason = classify(product.diet, product.ingredients, product.category, product.name)
     product.save()
 
 
@@ -179,9 +195,7 @@ def _claim(now: dt.datetime) -> bool:
     """Atomically mark the index as running, unless a live run already holds it."""
     AppSettings.load()
     free = Q(index_running=False) | Q(index_heartbeat__isnull=True) | Q(index_heartbeat__lt=now - HEARTBEAT_TIMEOUT)
-    return AppSettings.objects.filter(free, pk=1).update(
-        index_running=True, index_error="", index_heartbeat=now
-    ) == 1
+    return AppSettings.objects.filter(free, pk=1).update(index_running=True, index_error="", index_heartbeat=now) == 1
 
 
 def _crawl(retailer: str, sections, now, progress, only_known: bool) -> tuple[int, int]:
@@ -265,7 +279,8 @@ def run(progress: Progress | None = None, details: bool = True, force_listings: 
             )
             todo += list(
                 current.filter(checked_at__lt=now - RECHECK_AFTER)
-                .order_by("checked_at").values_list("pk", flat=True)[:RECHECK_PER_RUN]
+                .order_by("checked_at")
+                .values_list("pk", flat=True)[:RECHECK_PER_RUN]
             )
             errors = 0
             for i, pk in enumerate(todo, 1):
@@ -284,7 +299,9 @@ def run(progress: Progress | None = None, details: bool = True, force_listings: 
         return _finish(f"{n_w} varor hos Willys, {n_h} med pris hos Hemköp, {checked} granskade, {vegan} veganska.")
     except axfood.OutsideVisitTime:
         left = Product.objects.filter(checked_at__isnull=True).count()
-        return _finish(f"Pausad: kedjornas tidsfönster stängde. {checked} granskade nu, {left} kvar – fortsätter nästa körning.")
+        return _finish(
+            f"Pausad: kedjornas tidsfönster stängde. {checked} granskade nu, {left} kvar – fortsätter nästa körning."
+        )
     except StoreError as e:
         AppSettings.objects.filter(pk=1).update(index_error=str(e)[:300])
         raise
@@ -297,8 +314,9 @@ def is_running() -> bool:
     if _thread and _thread.is_alive():
         return True
     s = AppSettings.objects.filter(pk=1).values("index_running", "index_heartbeat").first()
-    return bool(s and s["index_running"] and s["index_heartbeat"]
-                and timezone.now() - s["index_heartbeat"] < HEARTBEAT_TIMEOUT)
+    return bool(
+        s and s["index_running"] and s["index_heartbeat"] and timezone.now() - s["index_heartbeat"] < HEARTBEAT_TIMEOUT
+    )
 
 
 def start_background() -> bool:

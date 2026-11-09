@@ -78,18 +78,14 @@ def scale(quantity: Decimal | None, recipe_servings: int, planned_servings: int)
     return quantity * Decimal(planned_servings) / Decimal(recipe_servings)
 
 
-def _merge_dimensions(
-    amounts: dict[str, Decimal], facts: IngredientFacts
-) -> tuple[dict[str, Decimal], set[str]]:
+def _merge_dimensions(amounts: dict[str, Decimal], facts: IngredientFacts) -> tuple[dict[str, Decimal], set[str]]:
     """Merge dimensions that can be converted. Returns (amounts, targets that received)."""
     if len(amounts) <= 1:
         return dict(amounts), set()
 
     best_target, best_absorbed = None, -1
     for target in sorted(amounts, key=_dim_rank):
-        absorbed = sum(
-            1 for d in amounts if d != target and conversion_factor(d, target, facts) is not None
-        )
+        absorbed = sum(1 for d in amounts if d != target and conversion_factor(d, target, facts) is not None)
         if absorbed > best_absorbed:
             best_target, best_absorbed = target, absorbed
     assert best_target is not None
@@ -112,7 +108,7 @@ def estimate_packages(item: AggregatedItem, facts: IngredientFacts) -> int | Non
     """Number of whole packages if it can be worked out, otherwise None."""
     if len(item.amounts) != 1:
         return None
-    (dim, amount), = item.amounts.items()
+    ((dim, amount),) = item.amounts.items()
     buy = facts.buy_unit()
     if buy is None:
         return packages_needed(amount, Decimal(1)) if dim == PACKAGE else None
@@ -129,15 +125,14 @@ def merge_with(item: AggregatedItem, facts: IngredientFacts) -> AggregatedItem:
     "1 förp + 200 g" can only be merged once it is known that the product weighs 500 g.
     """
     amounts, _ = _merge_dimensions(item.amounts, facts)
-    clone = AggregatedItem(item.ingredient_id, amounts, dict(item.preferred_units),
-                           item.unquantified, list(item.sources))
+    clone = AggregatedItem(
+        item.ingredient_id, amounts, dict(item.preferred_units), item.unquantified, list(item.sources)
+    )
     clone.packages = estimate_packages(clone, facts)
     return clone
 
 
-def aggregate(
-    lines: Iterable[Line], facts: dict[int, IngredientFacts] | None = None
-) -> dict[int, AggregatedItem]:
+def aggregate(lines: Iterable[Line], facts: dict[int, IngredientFacts] | None = None) -> dict[int, AggregatedItem]:
     facts = facts or {}
     items: dict[int, AggregatedItem] = {}
     units_seen: dict[int, dict[str, set[str]]] = {}

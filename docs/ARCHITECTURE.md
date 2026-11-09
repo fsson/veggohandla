@@ -1,51 +1,167 @@
 # Architecture
 
-A personal, local app. The goal is as little architecture as possible with full functionality.
+A personal, local app for planning vegan weekly meals and building a shopping list from a
+local copy of the Willys/Hemköp product range. The goal is as little architecture as possible
+with full functionality.
 
-## Stack
+This document is written to be read top to bottom by someone learning Python and Django.
+Part 1 explains the moving parts, part 2 follows one click through the code, part 3 says
+where to start reading, and part 4 lists the design decisions that must not be broken.
 
-| Part | Choice | Why |
+---
+
+## Part 1 – The big picture
+
+The app is one Python process. It does two jobs:
+
+1. **Serves web pages** to your browser (recipes, week planner, shopping list).
+2. **Refreshes the product index** every morning in a background thread (it downloads
+   products and prices from the stores into the local database).
+
+Everything is stored in one file, `data/veggohandla.sqlite3`. There is no other server to install.
+
+```
+   Browser  ──HTTP──>  waitress (web server)
+                           │
+                           ▼
+                        Django ── views.py ── services/ ── domain/
+                           │                       │
+                           ▼                       ▼
+                    SQLite file  <──────  scheduler thread ── stores/axfood.py ──> Willys/Hemköp
+```
+
+### The stack, in one sentence each
+
+| Part | What it is | Why |
 |---|---|---|
-| Web | Django 5.2 (LTS) | ORM, migrations, forms, admin – all in one. |
-| Interactivity | htmx + SortableJS (vendored) | Server-rendered, no build step, no Node. |
-| Database | SQLite in `data/` (WAL) | One file. Nothing to install. |
-| Styling | Hand-written CSS (`core/static/core/app.css`) | Light theme, desktop first, no dependencies. |
-| HTTP | httpx | Store data and recipe import. |
-| Serving | waitress + WhiteNoise | Production WSGI server and static files, both pure Python (run anywhere, incl. a Raspberry Pi). |
+| Django | Web framework: URLs, database models, forms, templates | One package gives us everything. |
+| SQLite | A database in a single file | Nothing to install or run. Backup = copy `data/`. |
+| htmx | A small JavaScript file (vendored) | Lets a click update part of a page without writing JavaScript. |
+| SortableJS | Drag and drop (vendored) | Used in the week planner. |
+| httpx | HTTP client | Downloads store data and imports recipes. |
+| waitress + WhiteNoise | Production web server + static file server | Pure Python, runs on a Raspberry Pi. |
+| pytest | Test runner | `uv run pytest` |
+| ruff | Linter and formatter | `uv run ruff check --fix . && uv run ruff format .` |
 
-No login and no household/user model: each person runs their own instance.
+No login and no user model: each person runs their own instance.
 
-## Code
+### Django vocabulary used in this repo
+
+| Term | Meaning | Where |
+|---|---|---|
+| **Model** | A Python class that is a database table. Each attribute is a column. | `core/models.py` |
+| **Migration** | A numbered script that changes the database to match the models. Created with `makemigrations`, applied with `migrate` (done automatically by `serve`). | `core/migrations/` |
+| **View** | A function that takes a request and returns a response (a page). | `core/views.py` |
+| **URL conf** | The table that maps a URL like `/recept/3/` to a view. | `core/urls.py` |
+| **Template** | HTML with `{{ placeholders }}` and `{% logic %}`. | `core/templates/core/` |
+| **Template filter** | A small function usable in templates, e.g. `{{ price|kr }}`. | `core/templatetags/vl.py` |
+| **Management command** | A script run as `uv run manage.py <name>`. | `core/management/commands/` |
+| **Settings** | Configuration (database path, debug on/off). | `config/settings.py` |
+
+### The three layers of our own code
+
+We keep the code in three layers so each part is easy to understand and test alone:
+
+| Layer | Folder | Rule |
+|---|---|---|
+| **Domain** | `core/domain/` | Pure Python functions. No Django, no database, no network. Input in, answer out. This is the hard logic (units, parsing, merging amounts, vegan check) and it has the most tests. |
+| **Services** | `core/services/` | Glue: read and write the database using the models, call domain functions. |
+| **Views** | `core/views.py` | Thin. Read the request, call a service, pick a template. No business logic. |
+
+The only code that talks to the internet is `core/stores/axfood.py`, and it is only called
+from `services/index.py`. If the stores are down the app keeps working on what it has stored.
+
+### Folder map
 
 ```
-core/
-  domain/            Pure logic without Django – the hard part, and the tests
-    units.py         Units, dimensions, conversion, formatting
-    parse.py         "1 ½ dl havredryck, kall" -> (1.5, dl, havredryck, kall)
-    aggregate.py     Scaling and merging into shopping rows
-    vegan.py         Strict vegan check of an ingredient list
-  stores/axfood.py   Willys/Hemköp adapter (the only code that talks to the stores)
-  services/
-    index.py         Builds the local index (categories -> products, prices, vegan check)
-    scheduler.py     Starts an index run every morning (inside `manage.py serve`)
-    catalog.py       Ingredient -> matching products -> cheapest for the amount
-    shopping.py      The shopping list and recipe cost
-    recipes.py       Ingredient text -> recipe lines, section for new ingredients
-    importer.py      Recipe import (schema.org JSON-LD)
+config/              Django project settings, root URLs, wsgi entry point
+core/                The one Django app – everything of ours lives here
+  models.py            All database tables
+  views.py             All pages
+  urls.py              URL -> view table
+  forms.py             Recipe form
+  admin.py             Django's built-in admin, for exceptional manual edits
+  seed_data.py         Starting data: sections, ingredients (with product matching), 5 recipes
+  domain/              Pure logic
+    units.py             Units, conversion between them, number formatting
+    parse.py             "1 ½ dl havredryck, kall" -> (1.5, dl, havredryck, kall)
+    aggregate.py         Scale recipes and merge amounts into shopping rows
+    vegan.py             Strict vegan check of an ingredient list
+  services/            Database-aware logic
+    catalog.py           Ingredient -> matching products -> cheapest for the amount
+    shopping.py          Builds the shopping list; recipe cost
+    recipes.py           Ingredient text -> recipe lines
+    importer.py          Import a recipe from a web page (schema.org JSON-LD)
+    images.py            Shrink uploaded/imported recipe images
+    index.py             Builds the local product index
+    scheduler.py         Background thread that starts an index run each morning
+  stores/axfood.py     The only code that talks to Willys/Hemköp
   management/commands/
-    serve.py         Hosting entry point: migrate, seed, scheduler, waitress
-    index.py         One index run by hand (`manage.py index`)
-    seed.py          Seed data (idempotent)
-  views.py           Thin views, return whole pages or htmx fragments
-  seed_data.py       Sections, ingredients with product matching, recipes as text
-deploy/install.sh    Installs/updates the app as a systemd service (e.g. on a Raspberry Pi)
+    serve.py             Start everything: migrate, seed, scheduler, web server
+    index.py             Run the product index by hand
+    seed.py              Insert seed data (safe to run repeatedly)
+  templates/ static/   HTML, CSS, vendored htmx/SortableJS
+  tests/               pytest tests
+deploy/install.sh    Installs the app as a systemd service (e.g. Raspberry Pi)
+data/                Your database and uploaded images (not in git)
 ```
 
-Language: the app is for Swedish users and Swedish stores. The interface, the seed data
-(ingredient and recipe names) and the product names are Swedish (see decision 13). The
-README is English. Code, comments and these docs are English.
+---
 
-## Data model
+## Part 2 – Following one click through the code
+
+Example: you open the shopping list for this week (`/handla/`).
+
+1. The browser sends `GET /handla/` to waitress, which hands it to Django.
+2. `config/urls.py` forwards to `core/urls.py`, which maps `handla/` to
+   `views.shopping_list`.
+3. `shopping_list` calls `shopping.build(week, retailer)` in `services/shopping.py`.
+4. `build` reads the week's `PlannedMeal` rows from the database, and for each recipe line
+   makes a `Line(ingredient, quantity, unit)`.
+5. It passes those lines to `domain/aggregate.py`, which scales them to the planned servings and
+   merges "2 dl havredryck" + "3 dl havredryck" into "5 dl havredryck". This function knows
+   nothing about Django; it is just maths on `Decimal` numbers.
+6. For each merged ingredient, `services/catalog.py` finds the matching products (using the
+   ingredient's `match` rule), works out how many packages are needed, and picks the cheapest.
+7. The result is a `ShoppingList` object. The view renders `templates/core/shopping.html`
+   with it and returns the HTML.
+8. When you click a button on a row (say, to choose another product), htmx sends a small
+   request to e.g. `shopping_choose`, and the server returns only that row's HTML
+   (`partials/shopping_row.html`), which htmx swaps into the page. No page reload, and no
+   JavaScript of our own.
+
+The same pattern repeats everywhere: URL -> view -> service -> domain, then a template. When
+you want to understand a feature, find its URL in `urls.py` and follow it down.
+
+### The morning refresh
+
+`manage.py serve` starts `services/scheduler.py` in a thread. Once a minute it asks "is it
+inside the stores' allowed time window, and is there work to do?". If yes it calls
+`services/index.py`, which uses `stores/axfood.py` to download categories, products and
+prices (one request every 10 seconds, as the stores' robots.txt asks), runs the vegan check
+(`domain/vegan.py`) and saves `Product` and `Price` rows. Only products that pass the vegan
+check are ever shown.
+
+---
+
+## Part 3 – Where to start reading
+
+1. `core/models.py` – the data. Read the data model below alongside it.
+2. `core/urls.py` – the list of everything the app can do.
+3. `core/domain/parse.py` and its tests in `core/tests/test_domain.py` – the easiest real
+   logic: text in, numbers out. Tests show how each function is meant to be used.
+4. `core/domain/aggregate.py` – merging amounts.
+5. `core/services/shopping.py` – how the pieces combine into the shopping list.
+6. `core/views.py` and the templates – how it reaches the screen.
+7. `stores/axfood.py` and `services/index.py` last; they are the most intricate.
+
+Everyday commands are in `README.md`.
+
+---
+
+## Part 4 – Data model and design decisions
+
+### Data model
 
 ```
 Category ─< Ingredient ─< IngredientAlias            (names that also match, optional implied unit)
@@ -59,7 +175,7 @@ Product (article code, name, size, category, ingredients, vegan?) ─< Price (ch
 ExtraItem (week: product from the index + count)    AppSettings (chain, last servings, index status)
 ```
 
-### Decisions
+### Design decisions
 
 1. **Three levels: recipe line → ingredient → product.** A recipe says "vegobullar", not a
    brand. An ingredient is a group ("what it is") of products in the index; which one is
@@ -138,6 +254,8 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
     - The app has no login, so it is meant for a home network, reached from outside through
       a VPN on the Pi (PiVPN/WireGuard) – never exposed to the internet (also because of the
       personal-use terms).
+
+---
 
 ## Extending
 

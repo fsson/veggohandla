@@ -14,9 +14,7 @@ from dataclasses import dataclass, field
 import httpx
 
 USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) Veggohandla/0.2"
-_LD_RE = re.compile(
-    r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.S | re.I
-)
+_LD_RE = re.compile(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.S | re.I)
 
 
 class ImportError_(Exception):

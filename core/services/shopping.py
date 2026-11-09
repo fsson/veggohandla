@@ -10,7 +10,6 @@ import datetime as dt
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-
 from core.domain.aggregate import AggregatedItem, Line, aggregate, scale
 from core.domain.units import MASS, conversion_factor, to_base
 from core.models import (
@@ -100,8 +99,7 @@ class ShoppingList:
         rows = [r for r in self.all_rows if r.cost and r.other and r.other.cost]
         if not rows:
             return None
-        return (sum((r.cost for r in rows), Decimal(0)),
-                sum((r.other.cost for r in rows), Decimal(0)), len(rows))
+        return (sum((r.cost for r in rows), Decimal(0)), sum((r.other.cost for r in rows), Decimal(0)), len(rows))
 
     def as_text(self) -> str:
         out = [f"Inköpslista v. {self.week.isocalendar().week}"]
@@ -155,8 +153,9 @@ def build(week: dt.date, retailer: str) -> ShoppingList:
     for meal in meals:
         sources[meal.id] = Source(meal.id, meal.recipe_id, meal.recipe.name, WEEKDAYS_SHORT[meal.date.weekday()])
         for ri in meal.recipe.ingredients.all():
-            lines.append(Line(ri.ingredient_id, scale(ri.quantity, meal.recipe.servings, meal.servings),
-                              ri.unit, meal.id))
+            lines.append(
+                Line(ri.ingredient_id, scale(ri.quantity, meal.recipe.servings, meal.servings), ri.unit, meal.id)
+            )
 
     ingredients = Ingredient.objects.select_related("category").in_bulk({ln.ingredient_id for ln in lines})
     items = aggregate(lines, {i: ing.facts() for i, ing in ingredients.items()})
@@ -198,8 +197,15 @@ def _extra_row(x: ExtraItem, retailer: str) -> Row:
             return None
         return Offer(x.product, price, x.count, (x.count * price.unit_price(x.count)).quantize(Decimal("0.01")), True)
 
-    return Row(key=f"x{x.pk}", name=x.product.name, quantity=f"{x.count} st",
-               extra_id=x.pk, offer=make(retailer), other=make(other_retailer(retailer)), chosen=True)
+    return Row(
+        key=f"x{x.pk}",
+        name=x.product.name,
+        quantity=f"{x.count} st",
+        extra_id=x.pk,
+        offer=make(retailer),
+        other=make(other_retailer(retailer)),
+        chosen=True,
+    )
 
 
 # ------------------------------------------------------------------ recipe cost

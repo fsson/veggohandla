@@ -115,9 +115,6 @@ class Recipe(models.Model):
     minutes = models.PositiveSmallIntegerField("tid (min)", null=True, blank=True)
     instructions = models.TextField("instruktioner", blank=True)
     source_url = models.URLField("källa", blank=True)
-    # Credit for an openly licensed photo (seed recipes): "Author, CC BY-SA 4.0" and its page.
-    image_credit = models.CharField("bildkredit", max_length=200, blank=True)
-    image_source = models.URLField("bildkälla", max_length=400, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

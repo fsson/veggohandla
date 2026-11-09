@@ -26,13 +26,18 @@ class Command(BaseCommand):
     help = "Kör Veggohandla: webbserver och automatisk uppdatering av sortimentet varje morgon."
 
     def add_arguments(self, parser):
-        parser.add_argument("--host", default=os.environ.get("VEGGOHANDLA_HOST", "127.0.0.1"),
-                            help="Adress att lyssna på (0.0.0.0 = alla nätverk). Standard: 127.0.0.1")
-        parser.add_argument("--port", type=int, default=int(os.environ.get("VEGGOHANDLA_PORT", "8000")),
-                            help="Port. Standard: 8000")
+        parser.add_argument(
+            "--host",
+            default=os.environ.get("VEGGOHANDLA_HOST", "127.0.0.1"),
+            help="Adress att lyssna på (0.0.0.0 = alla nätverk). Standard: 127.0.0.1",
+        )
+        parser.add_argument(
+            "--port", type=int, default=int(os.environ.get("VEGGOHANDLA_PORT", "8000")), help="Port. Standard: 8000"
+        )
         parser.add_argument("--threads", type=int, default=4, help="Antal trådar för webbservern.")
-        parser.add_argument("--no-refresh", action="store_true",
-                            help="Stäng av den automatiska uppdateringen av sortimentet.")
+        parser.add_argument(
+            "--no-refresh", action="store_true", help="Stäng av den automatiska uppdateringen av sortimentet."
+        )
 
     def handle(self, *args, **opts):
         from waitress import serve

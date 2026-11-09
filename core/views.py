@@ -31,9 +31,9 @@ from core.models import (
 )
 from core.services import catalog, images, importer, index, scheduler, shopping
 from core.services.catalog import CategoryNode
-from core.stores import axfood
 from core.services.recipes import resolve, search_recipes, set_ingredients_from_text
 from core.services.shopping import WEEKDAYS, WEEKDAYS_SHORT
+from core.stores import axfood
 
 MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"]
 
@@ -111,9 +111,13 @@ def recipe_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "retailer": settings.retailer,
         "retailer_label": settings.get_retailer_display(),
         "plan_days": [
-            (d.isoformat(), ("Idag" if d == today else f"{WEEKDAYS_SHORT[d.weekday()]} {_short_date(d)}")
-             + (" (nästa v.)" if d >= week + dt.timedelta(days=7) else ""))
-            for d in (week + dt.timedelta(days=i) for i in range(14)) if d >= today
+            (
+                d.isoformat(),
+                ("Idag" if d == today else f"{WEEKDAYS_SHORT[d.weekday()]} {_short_date(d)}")
+                + (" (nästa v.)" if d >= week + dt.timedelta(days=7) else ""),
+            )
+            for d in (week + dt.timedelta(days=i) for i in range(14))
+            if d >= today
         ],
         "planned": PlannedMeal.objects.filter(recipe=recipe, date__gte=today).order_by("date")[:5],
         "steps": [re.sub(r"^\s*\d+[.)]\s*", "", s) for s in recipe.instructions.splitlines() if s.strip()],
@@ -127,9 +131,6 @@ def _save_recipe(request: HttpRequest, form: RecipeForm) -> Recipe:
     with transaction.atomic():
         recipe = form.save(commit=False)
         upload = request.FILES.get("image")
-        if form.cleaned_data.get("remove_image") or upload:
-            # A credit belongs to the photo it was given for.
-            recipe.image_credit = recipe.image_source = ""
         if form.cleaned_data.get("remove_image"):
             recipe.image = ""
         elif upload:
@@ -146,7 +147,9 @@ def _save_recipe(request: HttpRequest, form: RecipeForm) -> Recipe:
         recipe.save()
         created = set_ingredients_from_text(recipe, form.cleaned_data.get("ingredient_text", ""))
     if created:
-        messages.info(request, f"Nya ingredienser: {', '.join(i.name for i in created)}. Varor hittas automatiskt i sortimentet.")
+        messages.info(
+            request, f"Nya ingredienser: {', '.join(i.name for i in created)}. Varor hittas automatiskt i sortimentet."
+        )
     return recipe
 
 
@@ -170,12 +173,18 @@ def recipe_import(request: HttpRequest) -> HttpResponse:
         data = importer.fetch(url)
     except importer.ImportError_ as e:
         return render(request, "core/recipe_import.html", {"error": str(e), "url": url})
-    form = RecipeForm(initial={
-        "name": data.name, "description": data.description, "servings": data.servings,
-        "minutes": data.minutes, "instructions": data.instructions,
-        "ingredient_text": "\n".join(data.ingredients), "image_url": data.image_url,
-        "source_url": data.source_url,
-    })
+    form = RecipeForm(
+        initial={
+            "name": data.name,
+            "description": data.description,
+            "servings": data.servings,
+            "minutes": data.minutes,
+            "instructions": data.instructions,
+            "ingredient_text": "\n".join(data.ingredients),
+            "image_url": data.image_url,
+            "source_url": data.source_url,
+        }
+    )
     messages.info(request, "Receptet är importerat men inte sparat. Kontrollera ingredienserna och tryck Spara.")
     return render(request, "core/recipe_form.html", {"form": form, "image_preview": data.image_url})
 
@@ -260,21 +269,30 @@ def planner(request: HttpRequest, week: str | None = None) -> HttpResponse:
         return redirect("planner", week=start.isoformat())
     days = [_day_ctx(start + dt.timedelta(days=i)) for i in range(7)]
     prev_has = PlannedMeal.objects.filter(date__gte=start - dt.timedelta(days=7), date__lt=start).exists()
-    return render(request, "core/planner.html", {
-        **_week_ctx(start),
-        "days": days,
-        "meal_count": sum(len(d["meals"]) for d in days),
-        "list": shopping.build(start, AppSettings.load().retailer),
-        "prev_has_meals": prev_has,
-        "index_empty": not Product.objects.filter(vegan=True).exists(),
-    })
+    return render(
+        request,
+        "core/planner.html",
+        {
+            **_week_ctx(start),
+            "days": days,
+            "meal_count": sum(len(d["meals"]) for d in days),
+            "list": shopping.build(start, AppSettings.load().retailer),
+            "prev_has_meals": prev_has,
+            "index_empty": not Product.objects.filter(vegan=True).exists(),
+        },
+    )
 
 
 def recipe_picker(request: HttpRequest) -> HttpResponse:
     day = dt.date.fromisoformat(request.GET["date"])
     q = request.GET.get("q", "").strip()
-    ctx = {"date": day, "day_label": _day_label(day), "recipes": search_recipes(q)[:80], "q": q,
-           "default_servings": AppSettings.load().default_servings}
+    ctx = {
+        "date": day,
+        "day_label": _day_label(day),
+        "recipes": search_recipes(q)[:80],
+        "q": q,
+        "default_servings": AppSettings.load().default_servings,
+    }
     if _target(request) == "picker-results":
         return render(request, "core/partials/picker_results.html", ctx)
     return render(request, "core/partials/picker.html", ctx)
@@ -342,11 +360,14 @@ def week_copy_previous(request: HttpRequest, week: str) -> HttpResponse:
     start = _parse_week(week)
     meals = list(PlannedMeal.objects.filter(date__gte=start - dt.timedelta(days=7), date__lt=start))
     PlannedMeal.objects.bulk_create(
-        PlannedMeal(date=m.date + dt.timedelta(days=7), recipe_id=m.recipe_id, servings=m.servings,
-                    position=m.position + 100)
+        PlannedMeal(
+            date=m.date + dt.timedelta(days=7), recipe_id=m.recipe_id, servings=m.servings, position=m.position + 100
+        )
         for m in meals
     )
-    messages.success(request, f"Kopierade {len(meals)} {'måltid' if len(meals) == 1 else 'måltider'} från förra veckan.")
+    messages.success(
+        request, f"Kopierade {len(meals)} {'måltid' if len(meals) == 1 else 'måltider'} från förra veckan."
+    )
     return redirect("planner", week=start.isoformat())
 
 
@@ -421,8 +442,14 @@ def shopping_choose(request: HttpRequest, week: str, ingredient_id: int) -> Http
     q = request.GET.get("q", "").strip()
     products = catalog.search(q, retailer) if q else None
     offers = catalog.offers(ing, item, retailer, products)
-    ctx = {"ingredient": ing, "row": row, "offers": offers, "q": q, "week": start,
-           "retailer_label": Retailer(retailer).label}
+    ctx = {
+        "ingredient": ing,
+        "row": row,
+        "offers": offers,
+        "q": q,
+        "week": start,
+        "retailer_label": Retailer(retailer).label,
+    }
     if _target(request) == "choose-results":
         return render(request, "core/partials/choose_results.html", ctx)
     return render(request, "core/partials/choose.html", ctx)
@@ -433,7 +460,11 @@ def _item_for(week: dt.date, ing: Ingredient):
     for meal in shopping.meals_for_week(week):
         for ri in meal.recipe.ingredients.all():
             if ri.ingredient_id == ing.pk:
-                q = ri.quantity * Decimal(meal.servings) / Decimal(meal.recipe.servings) if ri.quantity is not None else None
+                q = (
+                    ri.quantity * Decimal(meal.servings) / Decimal(meal.recipe.servings)
+                    if ri.quantity is not None
+                    else None
+                )
                 lines.append(Line(ing.pk, q, ri.unit, meal.id))
     return aggregate(lines, {ing.pk: ing.facts()}).get(ing.pk)
 
@@ -443,9 +474,15 @@ def extra_search(request: HttpRequest, week: str) -> HttpResponse:
     retailer = AppSettings.load().retailer
     q = request.GET.get("q", "").strip()
     results = catalog.search(q, retailer, limit=30) if q else []
-    return render(request, "core/partials/extra_results.html", {
-        "results": [(p, catalog.price_at(p, retailer)) for p in results], "q": q, "week": start,
-    })
+    return render(
+        request,
+        "core/partials/extra_results.html",
+        {
+            "results": [(p, catalog.price_at(p, retailer)) for p in results],
+            "q": q,
+            "week": start,
+        },
+    )
 
 
 @require_POST
@@ -525,8 +562,13 @@ def products_view(request: HttpRequest) -> HttpResponse:
     ctx = {
         **_index_ctx(),
         "rows": [(p, catalog.price_at(p, "willys"), catalog.price_at(p, "hemkop")) for p in products],
-        "q": q, "category": category, "tree": tree, "current": current,
-        "open_top": category.split("/")[0], "retailer": retailer, "shown": len(products),
+        "q": q,
+        "category": category,
+        "tree": tree,
+        "current": current,
+        "open_top": category.split("/")[0],
+        "retailer": retailer,
+        "shown": len(products),
         "total_vegan": sum(t.count for t in tree),
     }
     if _is_htmx(request) and _target(request) == "product-table":

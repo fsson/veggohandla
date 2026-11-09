@@ -17,6 +17,7 @@ dev = [
     "polib>=1.2.0",
     "pytest>=9.2.0",
     "pytest-django>=4.14.0",
+    "ruff>=0.17.4",
 ]
 
 [tool.uv]
@@ -26,3 +27,11 @@ package = false
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 testpaths = ["core/tests"]
+
+[tool.ruff]
+line-length = 120
+extend-exclude = ["core/migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]  # the formatter wraps code; long Swedish strings are left alone

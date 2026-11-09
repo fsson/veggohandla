@@ -7,7 +7,9 @@ class RecipeForm(forms.ModelForm):
     ingredient_text = forms.CharField(
         label="Ingredienser",
         required=False,
-        widget=forms.Textarea(attrs={"rows": 12, "placeholder": "500 g mjölig potatis\n0,5 förp vegobullar\n2 dl havredryck\nSalt"}),
+        widget=forms.Textarea(
+            attrs={"rows": 12, "placeholder": "500 g mjölig potatis\n0,5 förp vegobullar\n2 dl havredryck\nSalt"}
+        ),
         help_text="En ingrediens per rad: mängd, enhet, ingrediens. Anteckning efter komma.",
     )
     image_url = forms.URLField(required=False, widget=forms.HiddenInput, assume_scheme="https")

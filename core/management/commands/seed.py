@@ -7,7 +7,6 @@ from django.db import transaction
 
 from core import seed_data
 from core.models import Category, Ingredient, IngredientAlias, Recipe
-from core.services import images, importer
 from core.services.recipes import find_ingredient, set_ingredients_from_text
 
 
@@ -19,29 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         new_ing, new_rec = self._seed(opts)
-        # Photos are downloaded after the transaction, so no database lock is held meanwhile.
-        new_img = 0 if opts["no_recipes"] else self._attach_images()
-        self.stdout.write(self.style.SUCCESS(
-            f"Klart: {new_ing} nya ingredienser, {new_rec} nya recept, {new_img} bilder."))
-
-    def _attach_images(self) -> int:
-        """Download the seed recipes' photos – also for recipes seeded before they had any."""
-        added = 0
-        for r in seed_data.RECIPES:
-            img = r.get("image")
-            recipe = Recipe.objects.filter(name=r["name"]).first()
-            if not img or recipe is None or recipe.image:
-                continue
-            data = importer.download_image(img["url"])
-            f = images.normalized(data) if data else None
-            if not f:
-                self.stderr.write(f"Kunde inte hämta bilden till {r['name']} – receptet får ingen bild.")
-                continue
-            recipe.image.save(f.name, f, save=False)
-            recipe.image_credit, recipe.image_source = img["credit"], img["source"]
-            recipe.save(update_fields=["image", "image_credit", "image_source"])
-            added += 1
-        return added
+        self.stdout.write(self.style.SUCCESS(f"Klart: {new_ing} nya ingredienser, {new_rec} nya recept."))
 
     @transaction.atomic
     def _seed(self, opts) -> tuple[int, int]:
@@ -87,8 +64,11 @@ class Command(BaseCommand):
                 if Recipe.objects.filter(name=r["name"]).exists():
                     continue
                 recipe = Recipe.objects.create(
-                    name=r["name"], servings=r["servings"], minutes=r["minutes"],
-                    instructions=r["instructions"], description=r["description"],
+                    name=r["name"],
+                    servings=r["servings"],
+                    minutes=r["minutes"],
+                    instructions=r["instructions"],
+                    description=r["description"],
                 )
                 created = set_ingredients_from_text(recipe, r["ingredients"])
                 if created:

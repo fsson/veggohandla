@@ -16,7 +16,7 @@ from core.services import index, scheduler
 from core.stores import axfood
 from core.stores.axfood import Details, ProductData
 
-UTC = dt.timezone.utc
+UTC = dt.UTC
 MORNING = dt.datetime(2026, 11, 9, 5, 0, tzinfo=UTC)  # inside the window (04:00–08:45 UTC)
 EVENING = dt.datetime(2026, 11, 9, 18, 0, tzinfo=UTC)
 ROOT = Path(settings.BASE_DIR)
@@ -25,14 +25,15 @@ ROOT = Path(settings.BASE_DIR)
 # Tests using fake_store need `transactional_db`: the plain `db` fixture wraps each test in a
 # transaction, which would hide whether the crawler waits for the network inside one.
 def fake_store(monkeypatch, details_calls=None):
-    tree = [{"url": "vegetariskt", "title": "Vegetariskt",
-             "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]}]
+    tree = [{"url": "vegetariskt", "title": "Vegetariskt", "children": [{"url": "vegetariskt/tofu", "title": "Tofu"}]}]
 
     def list_category(retailer, slug):
         # The crawler must not hold a database transaction while it waits for the store.
         assert not connection.in_atomic_block, "network request inside a transaction"
         if retailer == "willys":
-            yield ProductData("willys", "1_ST", "Tofu Naturell", size_text="400g", size_amount=400, size_unit="g", price=25)
+            yield ProductData(
+                "willys", "1_ST", "Tofu Naturell", size_text="400g", size_amount=400, size_unit="g", price=25
+            )
             yield ProductData("willys", "2_ST", "Tofu Rökt", size_text="200g", size_amount=200, size_unit="g", price=20)
 
     def fetch_details(retailer, code):
@@ -188,8 +189,13 @@ def test_static_files_and_images_are_served_without_debug(db, client, settings, 
 
 
 def test_install_script_unit():
-    out = subprocess.run(["bash", str(ROOT / "deploy" / "install.sh"), "--print-unit"],
-                         capture_output=True, text=True, check=True, env={"PORT": "8080", "PATH": "/usr/bin:/bin"}).stdout
+    out = subprocess.run(
+        ["bash", str(ROOT / "deploy" / "install.sh"), "--print-unit"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={"PORT": "8080", "PATH": "/usr/bin:/bin"},
+    ).stdout
     assert f"WorkingDirectory={ROOT}" in out
     assert f"ExecStart={ROOT}/.venv/bin/python manage.py serve --host 0.0.0.0 --port 8080" in out
     assert "Restart=on-failure" in out and "WantedBy=multi-user.target" in out
@@ -197,8 +203,9 @@ def test_install_script_unit():
 
 @pytest.mark.skipif(not shutil.which("systemd-analyze"), reason="systemd not available")
 def test_install_script_unit_is_valid_systemd(tmp_path):
-    out = subprocess.run(["bash", str(ROOT / "deploy" / "install.sh"), "--print-unit"],
-                         capture_output=True, text=True, check=True).stdout
+    out = subprocess.run(
+        ["bash", str(ROOT / "deploy" / "install.sh"), "--print-unit"], capture_output=True, text=True, check=True
+    ).stdout
     unit = tmp_path / "veggohandla.service"
     unit.write_text(out)
     r = subprocess.run(["systemd-analyze", "verify", str(unit)], capture_output=True, text=True)

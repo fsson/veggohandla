@@ -9,8 +9,13 @@ from decimal import Decimal, InvalidOperation
 from .units import lookup_unit
 
 _UNICODE_FRACTIONS = {
-    "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4",
-    "⅕": "1/5", "⅛": "1/8",
+    "½": "1/2",
+    "⅓": "1/3",
+    "⅔": "2/3",
+    "¼": "1/4",
+    "¾": "3/4",
+    "⅕": "1/5",
+    "⅛": "1/8",
 }
 
 _NUM = r"\d+(?:[.,]\d+)?"
@@ -62,7 +67,7 @@ def parse_line(line: str) -> ParsedLine | None:
     m = re.search(r"\(([^)]*)\)", text)
     if m:
         note = m.group(1).strip()
-        text = (text[: m.start()] + text[m.end():]).strip()
+        text = (text[: m.start()] + text[m.end() :]).strip()
     if "," in text:
         # A comma can be a decimal separator ("1,5 dl") – only split on a comma followed by a space
         head, sep, tail = text.partition(", ")

@@ -34,7 +34,7 @@ uv run manage.py serve
 ```
 
 Open <http://127.0.0.1:8000>. The first time, the database is created in `data/` with 111
-ingredients and 5 vegan recipes with photos. As long as `serve` runs, the product range is fetched
+ingredients and 5 vegan recipes. As long as `serve` runs, the product range is fetched
 automatically every morning (see below). To keep the app running without leaving your
 computer on, a Raspberry Pi works well – see [Running on a Raspberry Pi](#running-on-a-raspberry-pi).
 

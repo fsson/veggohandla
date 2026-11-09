@@ -11,8 +11,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--prices-only", action="store_true", help="Hoppa över granskning av nya varor.")
         parser.add_argument("--reclassify", action="store_true", help="Kör bara om vegankontrollen lokalt.")
-        parser.add_argument("--refresh-listings", action="store_true",
-                            help="Hämta listningar och priser igen även om de är färska.")
+        parser.add_argument(
+            "--refresh-listings", action="store_true", help="Hämta listningar och priser igen även om de är färska."
+        )
 
     def handle(self, *args, **opts):
         if opts["reclassify"]:
@@ -30,8 +31,11 @@ class Command(BaseCommand):
             )
             return
         try:
-            summary = index.run(progress=lambda t: self.stdout.write(t), details=not opts["prices_only"],
-                                force_listings=opts["refresh_listings"])
+            summary = index.run(
+                progress=lambda t: self.stdout.write(t),
+                details=not opts["prices_only"],
+                force_listings=opts["refresh_listings"],
+            )
         except index.AlreadyRunning:
             self.stderr.write("En uppdatering pågår redan (t.ex. den automatiska i `manage.py serve`).")
             return

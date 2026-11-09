@@ -56,8 +56,7 @@ def in_visit_time(now: dt.datetime | None = None) -> bool:
 def visit_window(day: dt.date | None = None) -> tuple[dt.datetime, dt.datetime]:
     """The visiting hours on a given (UTC) day, as UTC datetimes."""
     day = day or dt.datetime.now(dt.UTC).date()
-    return (dt.datetime.combine(day, VISIT_START, tzinfo=dt.UTC),
-            dt.datetime.combine(day, VISIT_END, tzinfo=dt.UTC))
+    return (dt.datetime.combine(day, VISIT_START, tzinfo=dt.UTC), dt.datetime.combine(day, VISIT_END, tzinfo=dt.UTC))
 
 
 def next_visit_time(now: dt.datetime | None = None) -> dt.datetime:
@@ -138,8 +137,14 @@ _SIZE_RE = re.compile(
     re.IGNORECASE,
 )
 _SIZE_FACTORS = {
-    "kg": ("g", 1000), "g": ("g", 1), "l": ("ml", 1000), "dl": ("ml", 100),
-    "cl": ("ml", 10), "ml": ("ml", 1), "st": ("st", 1), "p": ("st", 1),
+    "kg": ("g", 1000),
+    "g": ("g", 1),
+    "l": ("ml", 1000),
+    "dl": ("ml", 100),
+    "cl": ("ml", 10),
+    "ml": ("ml", 1),
+    "st": ("st", 1),
+    "p": ("st", 1),
 }
 
 

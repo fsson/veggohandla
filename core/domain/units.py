@@ -13,7 +13,6 @@ ingredient's package size.
 
 from __future__ import annotations
 
-
 from dataclasses import dataclass
 from decimal import ROUND_CEILING, Decimal
 
@@ -48,8 +47,20 @@ _UNITS: list[Unit] = [
         "förp",
         PACKAGE,
         Decimal(1),
-        ("förpackning", "förpackningar", "paket", "pkt", "burk", "burkar", "påse",
-         "påsar", "ask", "askar", "tetra", "frp"),
+        (
+            "förpackning",
+            "förpackningar",
+            "paket",
+            "pkt",
+            "burk",
+            "burkar",
+            "påse",
+            "påsar",
+            "ask",
+            "askar",
+            "tetra",
+            "frp",
+        ),
     ),
     Unit("klyfta", "klyfta", Decimal(1), ("klyftor",), "klyftor"),
     Unit("knippe", "knippe", Decimal(1), ("knippen", "knippa"), "knippen"),
@@ -158,6 +169,7 @@ def packages_needed(amount: Decimal, package_amount: Decimal) -> int:
 
 
 # ---------------------------------------------------------------- formatting
+
 
 def format_number(value: Decimal, max_decimals: int = 2) -> str:
     """Format a number without unnecessary zeros: 1,5 · 0,25 · 2 (decimal comma)."""
