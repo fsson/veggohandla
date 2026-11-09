@@ -38,10 +38,6 @@ ingredients and 5 vegan recipes with photos. As long as `serve` runs, the produc
 automatically every morning (see below). To keep the app running without leaving your
 computer on, a Raspberry Pi works well – see [Running on a Raspberry Pi](#running-on-a-raspberry-pi).
 
-The recipe photos are downloaded from [Wikimedia Commons](https://commons.wikimedia.org) when the
-database is created. They are openly licensed, and the photographer and licence are shown on each
-recipe page.
-
 ### Fetching the product range
 
 In their robots.txt, Willys and Hemköp ask for at most one request per 10 seconds and only
