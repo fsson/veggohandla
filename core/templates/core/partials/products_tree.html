@@ -1,0 +1,17 @@
+    <nav class="tree" id="category-tree" aria-label="Kategorier"{% if oob %} hx-swap-oob="true"{% endif %}>
+      <a href="{% url 'products' %}{% if filters %}?{{ filters }}{% endif %}" class="node{% if not category %} active{% endif %}"><span>Alla varor</span><span class="n">{{ total_vegan }}</span></a>
+      {% for top in tree %}
+      <details{% if top.slug == open_top %} open{% endif %}>
+        <summary class="node{% if category == top.slug %} active{% endif %}">
+          <span class="chev">{% include "core/icon.html" with name="right" %}</span>
+          <span class="grow">{{ top.name }}</span><span class="n">{{ top.count }}</span>
+        </summary>
+        <div class="children">
+          <a href="?kategori={{ top.slug|urlencode }}{% if filters %}&{{ filters }}{% endif %}" class="node{% if category == top.slug %} active{% endif %}"><span>Allt i {{ top.name|lower }}</span></a>
+          {% for c in top.children %}
+          <a href="?kategori={{ c.slug|urlencode }}{% if filters %}&{{ filters }}{% endif %}" class="node{% if category == c.slug %} active{% endif %}"><span>{{ c.name }}</span><span class="n">{{ c.count }}</span></a>
+          {% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </nav>

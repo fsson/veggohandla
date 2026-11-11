@@ -9,28 +9,17 @@
 
 <div class="with-aside left">
   <aside class="aside">
-    <nav class="tree" aria-label="Kategorier">
-      <a href="{% url 'products' %}{% if q %}?q={{ q|urlencode }}{% endif %}" class="node{% if not category %} active{% endif %}"><span>Alla varor</span><span class="n">{{ total_vegan }}</span></a>
-      {% for top in tree %}
-      <details{% if top.slug == open_top %} open{% endif %}>
-        <summary class="node{% if category == top.slug %} active{% endif %}">
-          <span class="chev">{% include "core/icon.html" with name="right" %}</span>
-          <span class="grow">{{ top.name }}</span><span class="n">{{ top.count }}</span>
-        </summary>
-        <div class="children">
-          <a href="?kategori={{ top.slug|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="node{% if category == top.slug %} active{% endif %}"><span>Allt i {{ top.name|lower }}</span></a>
-          {% for c in top.children %}
-          <a href="?kategori={{ c.slug|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}" class="node{% if category == c.slug %} active{% endif %}"><span>{{ c.name }}</span><span class="n">{{ c.count }}</span></a>
-          {% endfor %}
-        </div>
-      </details>
-      {% endfor %}
-    </nav>
+    {% include "core/partials/products_tree.html" %}
   </aside>
   <div>
     {% if current %}<h2 style="margin-bottom:12px">{{ current.name }} <span class="muted small">{{ current.count }} varor</span></h2>{% endif %}
-    <form class="toolbar" hx-get="{% url 'products' %}" hx-target="#product-table" hx-trigger="input changed delay:250ms" hx-push-url="true">
+    <form class="toolbar" hx-get="{% url 'products' %}" hx-target="#product-table" hx-trigger="input delay:300ms" hx-push-url="true">
       <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="Sök vara eller märke" aria-label="Sök vara"></div>
+      <label class="check small"><input type="checkbox" name="erbjudande" value="1"{% if promo_only %} checked{% endif %}> Bara erbjudanden</label>
+      <select name="sortera" aria-label="Sortering">
+        <option value="">Sortera efter kategori</option>
+        <option value="pris"{% if sort == "pris" %} selected{% endif %}>Lägst pris först</option>
+      </select>
       {% if category %}<input type="hidden" name="kategori" value="{{ category }}">{% endif %}
     </form>
     <div id="product-table">{% include "core/partials/product_table.html" %}</div>

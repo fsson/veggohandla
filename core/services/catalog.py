@@ -14,11 +14,13 @@ the name is used. Only products vetted as vegan and priced at the chain are incl
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from django.db.models import Prefetch, Q, QuerySet
+from django.db.models import Exists, OuterRef, Prefetch, Q, QuerySet, Subquery
+from django.db.models.functions import Coalesce
 
 from core.domain.aggregate import AggregatedItem, merge_with
 from core.domain.units import MASS, conversion_factor, format_quantity
@@ -224,3 +226,34 @@ def search(query: str, retailer: str, limit: int = 40) -> list[Product]:
     for w in words:
         q &= _word(w) | Q(brand__icontains=w)
     return list(vegan_products(retailer).filter(q).distinct().order_by("name")[:limit])
+
+
+# ---------------------------------------------------------------- range filters
+
+
+def filter_range(
+    qs: QuerySet[Product],
+    retailer: str,
+    promo_only: bool = False,
+    sort: str = "",
+) -> QuerySet[Product]:
+    """Filters on the products page, by the price at the selected chain.
+
+    The price is what one package costs right now: the promotion price when a promotion is
+    active and applies to a single unit, otherwise the ordinary price (per kg for loose weight).
+    "promo_only" keeps every product with an active promotion, also "2 för 46"-style ones.
+    """
+    today = dt.date.today()  # the same "today" as Price.promo_active()
+    at_chain = Price.objects.filter(product=OuterRef("pk"), retailer=retailer, price__isnull=False)
+    active = at_chain.filter(promo_price__isnull=False).filter(Q(promo_until__isnull=True) | Q(promo_until__gte=today))
+    qs = qs.annotate(
+        current_price=Coalesce(
+            Subquery(active.filter(promo_min__lte=1).values("promo_price")[:1]),
+            Subquery(at_chain.values("price")[:1]),
+        )
+    )
+    if promo_only:
+        qs = qs.filter(Exists(active))
+    if sort == "pris":
+        return qs.order_by("current_price", "name")
+    return qs.order_by("category_name", "name")

@@ -18,5 +18,5 @@
 </div>
 {% if shown >= 300 %}<p class="small muted" style="margin-top:10px">Visar de första 300. Sök eller välj en kategori för att se fler.</p>{% endif %}
 {% else %}
-<div class="card empty"><p>{% if q %}Inga veganska varor matchar ”{{ q }}”.{% else %}Inga varor än.{% endif %}</p></div>
+<div class="card empty"><p>{% if filtered %}Inga varor har erbjudanden här just nu.{% elif q %}Inga veganska varor matchar ”{{ q }}”.{% else %}Inga varor än.{% endif %}</p></div>
 {% endif %}

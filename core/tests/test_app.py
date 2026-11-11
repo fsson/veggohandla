@@ -766,3 +766,35 @@ def test_ingredient_pages(seeded, client):
     alias = ing.aliases.get(name="hacklök")
     client.post(f"/ingredienser/alias/{alias.pk}/ta-bort/", HTTP_HX_REQUEST="true")
     assert not ing.aliases.filter(name="hacklök").exists()
+
+
+# ------------------------------------------------------------ products page filters
+
+
+def test_range_sorts_by_current_price_and_filters_promotions(seeded):
+    product("F1", "Pasta Penne", "skafferi/pasta", "500g", willys="20.00")
+    product("F2", "Pasta Fusilli", "skafferi/pasta", "500g", willys="30.00", promo=("15.00", 1))  # 15 kr now
+    product("F3", "Pasta Lasagne", "skafferi/pasta", "500g", willys="25.00", promo=("40.00", 2))  # "2 för 40"
+    product("F4", "Pasta Gnocchi", "skafferi/pasta", "500g", hemkop="5.00")  # not sold at Willys
+    qs = catalog.vegan_products("willys").filter(code__startswith="F")
+
+    def codes(**kw):
+        return [p.code for p in catalog.filter_range(qs, "willys", **kw)]
+
+    assert codes(sort="pris") == ["F2", "F1", "F3"]  # cheapest now first; a multi-buy deal doesn't count
+    assert set(codes(promo_only=True)) == {"F2", "F3"}
+    assert codes(promo_only=True, sort="pris") == ["F2", "F3"]
+
+
+def test_products_page_filters(seeded, client):
+    product("F1", "Pasta Penne", "skafferi/pasta", "500g", willys="20.00", hemkop="21.00")
+    product("F2", "Pasta Fusilli", "skafferi/pasta", "500g", willys="30.00", hemkop="31.00", promo=("15.00", 1))
+    AppSettings.objects.filter(pk=1).update(retailer="willys")
+    page = client.get("/sortiment/?q=pasta&sortera=pris").content.decode()
+    assert page.index("Pasta Fusilli") < page.index("Pasta Penne")  # 15 kr on promotion before 20 kr
+    assert "sortera=pris" in page  # the category links keep the filters
+    page = client.get("/sortiment/?q=pasta&erbjudande=1").content.decode()
+    assert "Pasta Fusilli" in page and "Pasta Penne" not in page
+    assert "Inga varor har erbjudanden" in client.get("/sortiment/?q=penne&erbjudande=1").content.decode()
+    r = client.get("/sortiment/?erbjudande=1", HTTP_HX_REQUEST="true", HTTP_HX_TARGET="product-table").content.decode()
+    assert 'hx-swap-oob="true"' in r

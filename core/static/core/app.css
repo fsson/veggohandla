@@ -152,6 +152,9 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; }
 .check { display: inline-flex; align-items: center; gap: 8px; }
+/* Checkboxes, radios and range sliders in the app's green instead of the system theme colour. */
+input[type=checkbox], input[type=radio], input[type=range], progress { accent-color: var(--accent); }
+.check input { width: 16px; height: 16px; margin: 0; cursor: pointer; }
 .searchbox { position: relative; }
 .searchbox .icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); width: 17px; height: 17px; }
 .searchbox input { padding-left: 36px; }

@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.db import transaction
@@ -544,6 +545,12 @@ def products_view(request: HttpRequest) -> HttpResponse:
     retailer = settings.retailer
     q = request.GET.get("q", "").strip()
     category = request.GET.get("kategori", "")
+    promo_only = request.GET.get("erbjudande") == "1"
+    sort = request.GET.get("sortera", "")
+    # Kept when moving between categories.
+    filters = urlencode(
+        {k: v for k, v in (("q", q), ("erbjudande", "1" if promo_only else ""), ("sortera", sort)) if v}
+    )
     qs = catalog.vegan_products(retailer)
     if q:
         qs = Product.objects.filter(pk__in=[p.pk for p in catalog.search(q, retailer, limit=300)])
@@ -559,11 +566,15 @@ def products_view(request: HttpRequest) -> HttpResponse:
             for child in top.children:
                 if child.slug == category:
                     current = CategoryNode(child.slug, f"{top.name} › {child.name}", child.count)
-    products = list(qs.order_by("category_name", "name")[:300])
+    products = list(catalog.filter_range(qs, retailer, promo_only, sort)[:300])
     ctx = {
         **_index_ctx(),
         "rows": [(p, catalog.price_at(p, "willys"), catalog.price_at(p, "hemkop")) for p in products],
         "q": q,
+        "promo_only": promo_only,
+        "sort": sort,
+        "filters": filters,
+        "filtered": promo_only,
         "category": category,
         "tree": tree,
         "current": current,
@@ -573,7 +584,10 @@ def products_view(request: HttpRequest) -> HttpResponse:
         "total_vegan": sum(t.count for t in tree),
     }
     if _is_htmx(request) and _target(request) == "product-table":
-        return render(request, "core/partials/product_table.html", ctx)
+        # The category links carry the filters, so the tree is updated alongside the table.
+        table = render(request, "core/partials/product_table.html", ctx).content
+        tree = render(request, "core/partials/products_tree.html", {**ctx, "oob": True}).content
+        return HttpResponse(table + tree)
     return render(request, "core/products.html", ctx)
 
 
