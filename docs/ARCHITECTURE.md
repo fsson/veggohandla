@@ -227,8 +227,9 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
     matching), and apply to recipe text entered from then on. A duplicate created from
     recipe text ("gulcurry" next to "Curry") is fixed by merging: its recipe lines and
     aliases move to the other ingredient and its name becomes an alias there, so neither
-    new recipe text nor `seed` recreates it. Only unused ingredients can be deleted. The section can be
-    changed on the page too (seed never moves an existing ingredient). Conversion facts
+    new recipe text nor `seed` recreates it. Only unused ingredients can be deleted. The section, staple and
+    "in shopping list" flags can be changed on the page too (seed never changes an existing
+    ingredient). Conversion facts
     still come from the seed data. New ingredients from recipe text get a guessed section,
     from where the index's products with the same name are (`guess_category`, Övrigt when
     nothing matches). Django admin exists for

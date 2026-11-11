@@ -693,11 +693,13 @@ def alias_delete(request: HttpRequest, pk: int) -> HttpResponse:
 
 @require_POST
 def ingredient_section(request: HttpRequest, pk: int) -> HttpResponse:
-    """Move the ingredient to another shopping-list section (when the automatic guess was wrong)."""
+    """How the ingredient shows up in the shopping list: section, staple, or not at all."""
     ing = _ingredient(pk)
     category = get_object_or_404(Category, pk=request.POST.get("category") or 0)
-    ingredients.set_section(ing, category)
-    messages.success(request, f"{ing.name} ligger nu under {category.name}.")
+    ingredients.set_shopping(
+        ing, category, staple=bool(request.POST.get("is_staple")), shop=bool(request.POST.get("in_shopping_list"))
+    )
+    messages.success(request, f"Inköpslistan för {ing.name.lower()} sparades.")
     return redirect("ingredient_detail", pk=ing.pk)
 
 

@@ -88,10 +88,16 @@ def add_alias(ingredient: Ingredient, name: str) -> str:
     return ""
 
 
-def set_section(ingredient: Ingredient, category: Category) -> None:
-    """Set the shopping-list section. It also decides where a rule without @ looks for products."""
+def set_shopping(ingredient: Ingredient, category: Category, staple: bool, shop: bool) -> None:
+    """How the ingredient shows up in the shopping list.
+
+    The section also decides where a rule without @ looks for products. A staple (salt, oil)
+    is listed apart under "check at home"; one not in the shopping list (water) isn't listed at all.
+    """
     ingredient.category = category
-    ingredient.save(update_fields=["category"])
+    ingredient.is_staple = staple
+    ingredient.in_shopping_list = shop
+    ingredient.save(update_fields=["category", "is_staple", "in_shopping_list"])
 
 
 def named(name: str) -> Ingredient | None:

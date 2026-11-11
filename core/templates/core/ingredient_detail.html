@@ -46,13 +46,24 @@
 
   <aside class="aside">
     <div class="card">
-      <h2 style="margin-bottom:4px">Avdelning</h2>
-      <p class="small muted" style="margin-bottom:10px">Var {{ ingredient.name|lower }} hamnar i inköpslistan. Avgör också var varuregeln söker när den saknar @.</p>
-      <form method="post" action="{% url 'ingredient_section' ingredient.pk %}" class="row">{% csrf_token %}
-        <select name="category" aria-label="Avdelning" class="grow">
-          {% for c in categories %}<option value="{{ c.pk }}"{% if c.pk == ingredient.category_id %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
-        </select>
-        <button class="btn sm soft">Spara</button>
+      <h2 style="margin-bottom:4px">I inköpslistan</h2>
+      <form method="post" action="{% url 'ingredient_section' ingredient.pk %}" class="stack" style="gap:10px">{% csrf_token %}
+        <div class="field">
+          <label for="id_category">Avdelning</label>
+          <select id="id_category" name="category">
+            {% for c in categories %}<option value="{{ c.pk }}"{% if c.pk == ingredient.category_id %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+          </select>
+          <p class="help">Avgör också var varuregeln söker när den saknar @.</p>
+        </div>
+        <div>
+          <label class="check small"><input type="checkbox" name="is_staple" value="1"{% if ingredient.is_staple %} checked{% endif %}> Basvara (kolla hemma)</label>
+          <p class="help">Har man oftast hemma, som salt och olja. Listas för sig så du kan kolla innan du handlar.</p>
+        </div>
+        <div>
+          <label class="check small"><input type="checkbox" name="in_shopping_list" value="1"{% if ingredient.in_shopping_list %} checked{% endif %}> Visa i inköpslistan</label>
+          <p class="help">Av för sådant som aldrig köps, som vatten.</p>
+        </div>
+        <div><button class="btn sm soft">Spara</button></div>
       </form>
     </div>
     <div class="card" id="alias-list">{% include "core/partials/alias_list.html" %}</div>

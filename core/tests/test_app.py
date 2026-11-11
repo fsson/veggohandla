@@ -817,7 +817,7 @@ def test_merge_and_delete_pages(seeded, client):
     assert not Ingredient.objects.filter(pk=unused.pk).exists()
 
 
-def test_section_can_be_changed_and_survives_seeding(seeded, client):
+def test_shopping_settings_can_be_changed_and_survive_seeding(seeded, client):
     recipe = Recipe.objects.create(name="Gul gryta", servings=4)
     set_ingredients_from_text(recipe, "2 tsk gulcurry")
     ing = find_ingredient("gulcurry")
@@ -825,17 +825,20 @@ def test_section_can_be_changed_and_survives_seeding(seeded, client):
     assert ing.category != spices  # no product is called "gulcurry": the guess falls back
 
     page = client.get(f"/ingredienser/{ing.pk}/").content.decode()
-    assert "Avdelning" in page and f'value="{spices.pk}"' in page
-    client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": spices.pk})
+    assert "Avdelning" in page and f'value="{spices.pk}"' in page and "Basvara" in page
+    client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": spices.pk, "is_staple": "1"})
     ing.refresh_from_db()
-    assert ing.category == spices
+    assert ing.category == spices and ing.is_staple and not ing.in_shopping_list  # unticked = off
+    client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": spices.pk, "in_shopping_list": "1"})
+    ing.refresh_from_db()
+    assert not ing.is_staple and ing.in_shopping_list
     assert client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": 99999}).status_code == 404
 
     seed_ing = Ingredient.objects.get(name="Gul lök")
-    client.post(f"/ingredienser/{seed_ing.pk}/avdelning/", {"category": spices.pk})
+    client.post(f"/ingredienser/{seed_ing.pk}/avdelning/", {"category": spices.pk, "is_staple": "1"})
     call_command("seed", stdout=open("/dev/null", "w"))
     seed_ing.refresh_from_db()
-    assert seed_ing.category == spices  # seeding never moves an existing ingredient
+    assert seed_ing.category == spices and seed_ing.is_staple  # seeding never changes an existing ingredient
 
 
 # ------------------------------------------------------------ products page filters
