@@ -118,7 +118,7 @@ button { font: inherit; color: inherit; }
 
 /* ------------------------------------------------------------ cards, badges */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
-.card.flush { padding: 0; overflow: hidden; }
+.card.flush { padding: 0; overflow: hidden; overflow-x: auto; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: .74rem; font-weight: 600; background: var(--surface-2); color: var(--muted); white-space: nowrap; }
 .badge.green { background: var(--accent-soft); color: var(--accent-strong); }
@@ -228,7 +228,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .need .qty { color: var(--muted); font-size: .84rem; }
 .need .from { color: var(--faint); font-size: .76rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prod { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.thumbnail { width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: #fff; border: 1px solid var(--border); flex: none; display: grid; place-items: center; color: var(--faint); font-size: .7rem; }
+.thumbnail { max-width: none; width: 40px; height: 40px; object-fit: contain; border-radius: 6px; background: #fff; border: 1px solid var(--border); flex: none; display: grid; place-items: center; color: var(--faint); font-size: .7rem; }
 .prod .txt { min-width: 0; }
 .prod .pname { font-size: .9rem; }
 .prod .pmeta { font-size: .78rem; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
@@ -306,15 +306,61 @@ dialog[open] #dialog-content { display: flex; flex-direction: column; max-height
 }
 @media (max-width: 900px) {
   .container { padding: 0 16px; }
-  .with-aside, .with-aside.left, .grid-2, .recipe-layout { grid-template-columns: 1fr; }
+  .with-aside, .with-aside.left, .grid-2, .recipe-layout { grid-template-columns: minmax(0, 1fr); }
   .aside { position: static; }
+  .tree { max-height: 320px; }
   .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .topbar .container { gap: 12px; }
   .topnav a { padding: 6px 9px; }
   .topnav a .icon { display: none; }
-  .item { grid-template-columns: minmax(0, 1fr) 80px; }
-  .item .prod { grid-column: 1 / -1; grid-row: 2; }
-  .item .actions { display: none; }
+  .item { grid-template-columns: minmax(0, 1fr) auto; }
+  .item .prod { grid-column: 1; grid-row: 2; }
+  .item .actions { grid-column: 2; grid-row: 2; }
+}
+
+/* ------------------------------------------------------------ phones */
+@media (max-width: 640px) {
+  h1 { font-size: 1.35rem; }
+  .page { padding-top: 16px; padding-bottom: 96px; } /* room for the bottom menu */
+  .page-head { margin-bottom: 14px; }
+  .card { padding: 14px; }
+  .hide-sm { display: none; }
+  .spread, .status-line, .toolbar, .card-head { flex-wrap: wrap; }
+  .data-table th, .data-table td { padding-left: 6px; padding-right: 6px; }
+  .data-table .badge { white-space: normal; }
+  .toolbar .searchbox { max-width: none; flex-basis: 100%; }
+  .two { grid-template-columns: 1fr; }
+
+  /* The menu moves to a tab bar at the bottom, where a thumb reaches it. */
+  .topbar .container { height: 52px; }
+  .topnav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  .topnav a { flex-direction: column; gap: 2px; padding: 6px 2px; border-radius: 10px; font-size: .68rem; }
+  .topnav a .icon { display: block; width: 20px; height: 20px; }
+
+  .week-grid { grid-template-columns: minmax(0, 1fr); }
+  .day { min-height: 0; }
+  .hero img, .hero .placeholder { aspect-ratio: 16 / 9; }
+  .summary-bar { flex-wrap: wrap; gap: 12px 22px; }
+  .week-foot { flex-direction: column; align-items: flex-start; }
+
+  .offer { grid-template-columns: 48px minmax(0, 1fr) auto; }
+  .offer > :nth-child(4) { grid-column: 2 / -1; justify-self: end; }
+  .offer .trunc { white-space: normal; }
+  .help .plain-list li { display: block; }
+
+  dialog { width: calc(100vw - 16px); max-height: 90vh; }
+  dialog[open] #dialog-content { max-height: 90vh; }
+  .dialog-head, .dialog-body { padding-left: 14px; padding-right: 14px; }
+}
+
+/* Touch screens have no hover: show the buttons that otherwise appear on hover. */
+@media (hover: none) {
+  .meal .hover-only, .item .actions .hover-only { visibility: visible; }
 }
 @media print {
   .topbar, .aside, .no-print, .actions { display: none !important; }

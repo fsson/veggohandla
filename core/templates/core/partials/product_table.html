@@ -1,16 +1,16 @@
 {% load vl %}{% if rows %}
 <div class="card flush">
 <table class="data-table">
-  <thead><tr><th></th><th>Vara</th><th>Kategori</th><th class="num">Willys</th><th class="num">Hemköp</th><th>Varför vegansk</th></tr></thead>
+  <thead><tr><th></th><th>Vara</th><th class="hide-sm">Kategori</th><th class="num">Willys</th><th class="num">Hemköp</th><th class="hide-sm">Varför vegansk</th></tr></thead>
   <tbody>
   {% for p, w, h in rows %}
   <tr>
     <td>{% if p.image_url %}<img class="thumbnail" src="{{ p.image_url }}" alt="" loading="lazy">{% endif %}</td>
     <td><a href="{{ p|product_url:retailer }}" target="_blank" rel="noopener"><strong>{{ p.name }}</strong></a><br><span class="tiny muted">{{ p.brand }}{% if p.size_text %} · {{ p.size_text }}{% endif %}</span></td>
-    <td class="small muted">{{ p.category_name }}</td>
+    <td class="small muted hide-sm">{{ p.category_name }}</td>
     <td class="num">{% if w %}{{ w.unit_price|kr }}{% if p.price_per_kg %}/kg{% endif %}{% if w.promo_active %}<br><span class="badge promo">{{ w.promo_text }}</span>{% endif %}{% else %}<span class="faint">–</span>{% endif %}</td>
     <td class="num">{% if h %}{{ h.unit_price|kr }}{% if p.price_per_kg %}/kg{% endif %}{% if h.promo_active %}<br><span class="badge promo">{{ h.promo_text }}</span>{% endif %}{% else %}<span class="faint">–</span>{% endif %}</td>
-    <td class="tiny muted" title="{{ p.ingredients }}">{{ p.vegan_reason|vegan_reason }}</td>
+    <td class="tiny muted hide-sm" title="{{ p.ingredients }}">{{ p.vegan_reason|vegan_reason }}</td>
   </tr>
   {% endfor %}
   </tbody>
