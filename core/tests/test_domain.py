@@ -254,7 +254,6 @@ def test_purchase_package_does_not_change_recipe_package():
 
 # ------------------------------------------------------------------ vegan
 
-from core.domain.aggregate import AggregatedItem, merge_with  # noqa: E402
 from core.domain.vegan import animal_word, classify  # noqa: E402
 
 
@@ -298,6 +297,21 @@ def test_classify_is_strict():
     assert classify("", "", "frukt-och-gront/svamp", "Ostronskivling")[0] is True
     assert classify("", "", "frukt-och-gront/frukt", "Honungsmelon")[0] is True
     assert classify("", "", "skafferi/kryddor", "Salt")[0] is None
+
+
+def test_classify_needs_the_vegan_label_in_meat_and_fish():
+    assert classify("", "", "kott-chark-och-fagel/kott", "Ryggbiff") == (None, "label_required")
+    assert classify("", "Ärtprotein, rapsolja", "fisk-och-skaldjur/palagg") == (None, "label_required")
+    assert classify("", "Nötkött 100%", "kott-chark-och-fagel/kott") == (False, "contains:nötkött")
+    assert classify("Vegansk", "Ärtprotein, rapsolja", "kott-chark-och-fagel/palagg") == (True, "labelled")
+
+
+def test_vitamin_d3_is_animal_unless_labelled_vegan():
+    assert classify("", "Kalcium, kolekalciferol", "halsa-och-skonhet/halsokost")[0] is False
+    assert classify("Vegan", "Kalcium, kolekalciferol (från lav)", "halsa-och-skonhet/halsokost")[0] is True
+
+
+from core.domain.aggregate import AggregatedItem, merge_with  # noqa: E402
 
 
 def test_merge_with_product_size():

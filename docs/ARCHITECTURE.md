@@ -207,10 +207,11 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
 9. **The vegan check is strict** (`domain/vegan.py`). Labelled vegan or an ingredient list
    without animal words → included. An animal word → never included. No ingredient list →
    only unprocessed fruit and vegetables. Trace warnings are ignored. The ingredient list
-   is stored, so a changed rule can be re-run locally (`index --reclassify`). Everything
-   is crawled except the top categories for meat, fish and non-food (`SKIPPED_TOP_WORDS`),
-   so vegan products in dairy, frozen, drinks and so on are found; the first full vetting
-   takes more mornings, products matching an ingredient go first.
+   is stored, so a changed rule can be re-run locally (`index --reclassify`). The app is
+   about food only: every food category is crawled, including meat and fish so vegan
+   products filed there are found, and the non-food departments (`NON_FOOD_TOP_CATEGORIES`)
+   never are, except food subcategories inside them (`FOOD_IN_NON_FOOD`: Hälsokost). In meat and fish (`LABEL_ONLY_CATEGORIES`) only the chain's "Vegan" label
+   counts. The first full vetting takes more mornings; products matching an ingredient go first.
 10. **The store integration is decoupled and follows the chains' rules.** Network requests
     only happen while indexing. The chains' robots.txt is followed: `Crawl-delay: 10` (one
     request per 10 s per chain) and `Visit-time: 0400-0845` (UTC); no requests are made

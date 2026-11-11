@@ -675,18 +675,27 @@ def test_every_category_has_store_categories_except_other(seeded):
         assert c.store_categories, c.name
 
 
-def test_default_crawl_covers_everything_but_meat_fish_and_non_food():
+def test_default_crawl_covers_all_food_but_no_non_food():
     tree = [
         {"url": u, "title": u, "children": [{"url": f"{u}/x", "title": "x"}]}
-        for u in (
-            "fryst",
-            "mejeri-ost-och-agg",
-            "dryck",
-            "kott-chark-och-fagel",
-            "fisk-och-skaldjur",
-            "hem-och-hushall",
-        )
+        for u in ("fryst", "kott-chark-och-fagel", "fisk-och-skaldjur", "dryck", "tobak")
     ]
+    tree.append(
+        {
+            "url": "halsa-och-skonhet",
+            "title": "Hälsa & Skönhet",
+            "children": [
+                {"url": "halsa-och-skonhet/harvard", "title": "Hårvård"},
+                {"url": "halsa-och-skonhet/halsokost", "title": "Hälsokost"},
+            ],
+        }
+    )
     slugs = [s for s, _ in index.resolve_sections(tree, None)]
-    assert slugs == ["fryst/x", "mejeri-ost-och-agg/x", "dryck/x"]
+    assert slugs == [
+        "fryst/x",
+        "kott-chark-och-fagel/x",
+        "fisk-och-skaldjur/x",
+        "dryck/x",
+        "halsa-och-skonhet/halsokost",  # health food is food; hair care is not
+    ]
     assert [s for s, _ in index.resolve_sections(tree, {"fryst": None})] == ["fryst/x"]

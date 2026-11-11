@@ -47,6 +47,8 @@ ANIMAL_PARTS = (
     "schellack",
     "talg",
     "kollagen",
+    "kolekalciferol",  # vitamin D3, usually from lanolin (a "Vegan" label still counts)
+    "cholecalciferol",
     "albumin",
     "lysozym",
     "yoghurt",
@@ -182,6 +184,11 @@ _WORD_RE = re.compile(r"[a-zåäöéü0-9]+", re.IGNORECASE)
 # Store categories where products without an ingredient list are unprocessed plants.
 PRODUCE_CATEGORIES = ("frukt-och-gront/",)
 
+# Meat and fish departments: almost everything there is animal, and a product without a full
+# ingredient list ("Ryggbiff") would otherwise slip through as unknown at best. They are crawled
+# only to find the vegan products filed there, so only the chain's "Vegan" label counts.
+LABEL_ONLY_CATEGORIES = ("kott-chark-och-fagel/", "fisk-och-skaldjur/")
+
 
 def animal_word(text: str) -> str | None:
     """First animal word in an ingredient text (ignoring trace warnings), otherwise None."""
@@ -206,11 +213,14 @@ def animal_word(text: str) -> str | None:
 def classify(diet: str, ingredients: str, category: str, name: str = "") -> tuple[bool | None, str]:
     """(vegan?, reason code). None = unknown, treated as not vegan.
 
-    The reason is a language-neutral code ("labelled", "no_animal", "produce", "no_list" or
+    The reason is a language-neutral code ("labelled", "no_animal", "produce", "no_list", "label_required" or
     "contains:<word>") that the UI turns into text.
     """
     if diet and "vegan" in diet.lower():
         return True, "labelled"
+    if category.startswith(LABEL_ONLY_CATEGORIES):
+        hit = animal_word(ingredients or "")
+        return (False, f"contains:{hit}") if hit else (None, "label_required")
     if ingredients and ingredients.strip():
         hit = animal_word(ingredients)
         if hit:

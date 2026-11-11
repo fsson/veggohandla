@@ -37,29 +37,22 @@ from core.stores.axfood import StoreError
 
 log = logging.getLogger(__name__)
 
-# Which categories to crawl: None = everything except the top categories that are meat, fish or
-# non-food (SKIPPED_TOP_WORDS). Dairy, frozen, ready meals, drinks, sweets and so on are crawled
-# whole, because vegan products hide in all of them (vegan cheese, ice cream, pizza ...); the vegan
-# check keeps only what is actually vegan. A dict {top slug: [subcategories] or None} restricts it.
+# Which categories to crawl: None = every food category, including meat and fish, so no vegan
+# product is missed wherever the chain files it (vegan pålägg sits under meat). The vegan check
+# decides what is shown, and is stricter in meat and fish (LABEL_ONLY_CATEGORIES in domain/vegan.py).
+# A dict {top slug: [subcategories] or None} restricts the crawl.
 WILLYS_SECTIONS: dict[str, list[str] | None] | None = None
 HEMKOP_SECTIONS: dict[str, list[str] | None] | None = None
-# Words in a top category's slug that mark it as never vegan or not food.
-SKIPPED_TOP_WORDS = (
-    "kott",
-    "fisk",
-    "fagel",
-    "chark",
-    "skaldjur",  # animal products
-    "hushall",
-    "hygien",
+# Top categories that are not food. The app is about food only, so these are never crawled –
+# except the food subcategories listed in FOOD_IN_NON_FOOD (health food sits under health & beauty).
+FOOD_IN_NON_FOOD = ("halsa-och-skonhet/halsokost",)
+NON_FOOD_TOP_CATEGORIES = (
+    "hem-och-stad",
+    "halsa-och-skonhet",
     "apotek",
-    "skonhet",
-    "kosmetik",
     "djur",
-    "blommor",
+    "blommor-och-tradgard",
     "tobak",
-    "tvatt",
-    "barnvard",  # non-food
 )
 
 RECHECK_AFTER = dt.timedelta(days=120)  # ingredient lists rarely change
@@ -89,9 +82,6 @@ def resolve_sections(tree: list[dict], sections: dict[str, list[str] | None] | N
     for top in tree:
         top_slug = top.get("url", "")
         if sections is None:
-            if any(w in top_slug for w in SKIPPED_TOP_WORDS):
-                log.info("Index: skipping category %s", top_slug)
-                continue
             wanted = None
         elif top_slug in sections:
             wanted = sections[top_slug]
@@ -99,6 +89,8 @@ def resolve_sections(tree: list[dict], sections: dict[str, list[str] | None] | N
             continue
         for child in top.get("children") or []:
             slug = child.get("url", "")
+            if sections is None and top_slug in NON_FOOD_TOP_CATEGORIES and slug not in FOOD_IN_NON_FOOD:
+                continue
             if wanted is None or slug.rsplit("/", 1)[-1] in wanted:
                 out.append((slug, f"{top.get('title', '')} › {child.get('title', '')}"))
     return out

@@ -58,4 +58,5 @@ def vegan_reason(code):
         "no_animal": "Inga animaliska ingredienser",
         "produce": "Frukt och grönt",
         "no_list": "Ingen ingredienslista",
+        "label_required": "Kräver veganmärkning",
     }.get(kind, code or "")
