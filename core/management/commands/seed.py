@@ -32,8 +32,8 @@ class Command(BaseCommand):
         for d in seed_data.INGREDIENTS:
             existing = find_ingredient(d["name"])
             if existing:
-                # The product matching follows the seed data (it isn't edited in the app).
-                if existing.match != d["match"]:
+                # The product matching follows the seed data, unless it was changed in the app.
+                if existing.match != d["match"] and not existing.match_edited:
                     existing.match = d["match"]
                     existing.save(update_fields=["match"])
                 continue

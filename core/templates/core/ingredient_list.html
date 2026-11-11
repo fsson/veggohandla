@@ -1,0 +1,11 @@
+{% extends "core/base.html" %}
+{% block title %}Ingredienser – Veggohandla{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1>Ingredienser</h1><p class="sub">Varje ingrediens hittar sina varor i sortimentet med en matchningsregel. Klicka på en ingrediens för att se och ändra den.</p></div>
+</div>
+<form class="toolbar" hx-get="{% url 'ingredient_list' %}" hx-target="#ingredient-table" hx-trigger="input changed delay:250ms" hx-push-url="true">
+  <div class="searchbox">{% include "core/icon.html" with name="search" %}<input type="search" name="q" value="{{ q }}" placeholder="Sök ingrediens eller alias" aria-label="Sök ingrediens"></div>
+</form>
+<div id="ingredient-table">{% include "core/partials/ingredient_table.html" %}</div>
+{% endblock %}

@@ -20,6 +20,7 @@
         <a href="{% url 'planner_current' %}" class="{% if nav_section == 'planner' %}active{% endif %}">{% include "core/icon.html" with name="calendar" %}Veckan</a>
         <a href="{% url 'recipe_list' %}" class="{% if nav_section == 'recipes' %}active{% endif %}">{% include "core/icon.html" with name="book" %}Recept</a>
         <a href="{% url 'shopping_current' %}" class="{% if nav_section == 'shopping' %}active{% endif %}">{% include "core/icon.html" with name="cart" %}Handla</a>
+        <a href="{% url 'ingredient_list' %}" class="{% if nav_section == 'ingredients' %}active{% endif %}">{% include "core/icon.html" with name="tag" %}Ingredienser</a>
         <a href="{% url 'products' %}" class="{% if nav_section == 'products' %}active{% endif %}">{% include "core/icon.html" with name="store" %}Sortiment</a>
       </nav>
     </div>

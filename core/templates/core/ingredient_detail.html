@@ -1,0 +1,57 @@
+{% extends "core/base.html" %}
+{% block title %}{{ ingredient.name }} – Veggohandla{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="small"><a class="link" href="{% url 'ingredient_list' %}">Ingredienser</a> › {{ ingredient.category.name }}</p>
+    <h1>{{ ingredient.name }}</h1>
+    <p class="sub">Två steg: <strong>alias</strong> styr vilken recepttext som blir {{ ingredient.name|lower }},
+      och <strong>varuregeln</strong> styr vilka varor i butiken som räknas som {{ ingredient.name|lower }}.
+      I inköpslistan väljs sedan den billigaste av de varorna.</p>
+  </div>
+</div>
+
+<div class="with-aside">
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h2>Varuregel – vilka varor räknas som {{ ingredient.name|lower }}?</h2>{% if ingredient.match_edited %}<span class="badge green">ändrad av dig</span>{% endif %}</div>
+      <form method="post" action="{% url 'ingredient_detail' ingredient.pk %}" class="form-grid">
+        {% csrf_token %}
+        <div class="field">
+          <label for="id_match">Regel (jämförs med varornas namn i butiken)</label>
+          <input type="text" id="id_match" name="match" value="{{ ingredient.match }}" placeholder="{{ ingredient.name|lower }}" autocomplete="off"
+            hx-get="{% url 'match_preview' ingredient.pk %}" hx-trigger="input changed delay:300ms" hx-target="#match-preview">
+          <div class="help">
+            <p>Tom regel = ingrediensens namn. Förhandsvisningen nedan uppdateras medan du skriver; inget sparas förrän du klickar på Spara.</p>
+            <ul class="plain-list" style="margin-top:6px">
+              <li><code>krossade tomat</code> – alla ord måste finnas i varans namn, i början av ett ord</li>
+              <li><code>spenat baby; babyspenat</code> – semikolon skiljer alternativ, ett räcker</li>
+              <li><code>lök gul -syltad -stekt</code> – minus utesluter varor med ordet</li>
+              <li><code>tortilla @brod-och-kakor</code> – @ söker bara i en butikskategori</li>
+            </ul>
+            <p style="margin-top:6px">Utan @ söks i avdelningens kategorier ({{ ingredient.category.name }}):
+              {% for c in store_categories %}<code>{{ c }}</code>{% if not forloop.last %}, {% endif %}{% empty %}hela sortimentet{% endfor %}.</p>
+          </div>
+        </div>
+        <div class="form-actions">
+          {% if ingredient.match_edited %}
+          <button class="btn ghost" formaction="{% url 'ingredient_reset' ingredient.pk %}" title="{% if seed_rule is not None %}Standardregeln: {{ seed_rule|default:'namnet' }}{% else %}Tillbaka till namnet{% endif %}">Återställ standard</button>
+          {% endif %}
+          <button class="btn primary">Spara</button>
+        </div>
+      </form>
+    </div>
+    <div class="card" id="match-preview">{% include "core/partials/match_preview.html" %}</div>
+  </div>
+
+  <aside class="aside">
+    <div class="card" id="alias-list">{% include "core/partials/alias_list.html" %}</div>
+    <div class="card">
+      <h2 style="margin-bottom:8px">Används i</h2>
+      {% if recipes %}
+      <ul class="plain-list">{% for r in recipes %}<li><a class="link" href="{% url 'recipe_detail' r.pk %}">{{ r.name }}</a></li>{% endfor %}</ul>
+      {% else %}<p class="small muted">Inga recept.</p>{% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

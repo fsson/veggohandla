@@ -1,7 +1,7 @@
 <div class="dialog-head">
   <div class="spread">
     <div><h2>Välj vara: {{ ingredient.name }}</h2>
-      <p class="sub">{% if row %}Behov: {{ row.quantity|default:"efter smak" }}{% if row.sources %} ({% for s in row.sources %}{{ s.recipe_name }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %} · {% endif %}Priser hos {{ retailer_label }}, billigast för mängden först.</p></div>
+      <p class="sub">{% if row %}Behov: {{ row.quantity|default:"efter smak" }}{% if row.sources %} ({% for s in row.sources %}{{ s.recipe_name }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %} · {% endif %}Priser hos {{ retailer_label }}, billigast för mängden först. <a class="link" href="{% url 'ingredient_detail' ingredient.pk %}">Ändra vilka varor som matchar</a></p></div>
     <button class="btn icon-only ghost" data-close-dialog aria-label="Stäng">{% include "core/icon.html" with name="x" %}</button>
   </div>
   <div class="searchbox">{% include "core/icon.html" with name="search" %}

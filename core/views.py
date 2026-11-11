@@ -8,7 +8,7 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Count, Max, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -22,6 +22,7 @@ from core.models import (
     AppSettings,
     ExtraItem,
     Ingredient,
+    IngredientAlias,
     PlannedMeal,
     Product,
     Recipe,
@@ -29,7 +30,7 @@ from core.models import (
     ShoppingItemState,
     week_start,
 )
-from core.services import catalog, images, importer, index, scheduler, shopping
+from core.services import catalog, images, importer, index, ingredients, scheduler, shopping
 from core.services.catalog import CategoryNode
 from core.services.recipes import resolve, search_recipes, set_ingredients_from_text
 from core.services.shopping import WEEKDAYS, WEEKDAYS_SHORT
@@ -584,3 +585,86 @@ def index_status(request: HttpRequest) -> HttpResponse:
 def index_start(request: HttpRequest) -> HttpResponse:
     index.start_background()
     return render(request, "core/partials/index_status.html", _index_ctx())
+
+
+# =================================================================== ingredients
+
+
+def ingredient_list(request: HttpRequest) -> HttpResponse:
+    q = request.GET.get("q", "").strip()
+    qs = Ingredient.objects.select_related("category").annotate(
+        n_aliases=Count("aliases", distinct=True), n_recipes=Count("uses__recipe", distinct=True)
+    )
+    if q:
+        hits = Ingredient.objects.filter(Q(name__icontains=q) | Q(aliases__name__icontains=q)).values("pk")
+        qs = qs.filter(pk__in=hits)
+    ctx = {"ingredients": qs.order_by("category__sort_order", "category__name", "name"), "q": q}
+    if _is_htmx(request) and _target(request) == "ingredient-table":
+        return render(request, "core/partials/ingredient_table.html", ctx)
+    return render(request, "core/ingredient_list.html", ctx)
+
+
+def _ingredient(pk: int) -> Ingredient:
+    return get_object_or_404(Ingredient.objects.select_related("category"), pk=pk)
+
+
+def _alias_ctx(ing: Ingredient, error: str = "") -> dict:
+    return {"ingredient": ing, "aliases": ing.aliases.order_by("name"), "alias_error": error}
+
+
+def ingredient_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    ing = _ingredient(pk)
+    if request.method == "POST":
+        ingredients.set_match(ing, request.POST.get("match", ""))
+        messages.success(request, f"Varumatchningen för {ing.name.lower()} sparades.")
+        return redirect("ingredient_detail", pk=ing.pk)
+    retailer = AppSettings.load().retailer
+    ctx = {
+        **_alias_ctx(ing),
+        "preview": ingredients.preview(ing, ing.match, retailer),
+        "seed_rule": ingredients.seed_rule(ing),
+        "store_categories": (ing.category.store_categories or "").split(),
+        "recipes": Recipe.objects.filter(ingredients__ingredient=ing).distinct().order_by("name"),
+        "retailer_label": Retailer(retailer).label,
+    }
+    return render(request, "core/ingredient_detail.html", ctx)
+
+
+def match_preview(request: HttpRequest, pk: int) -> HttpResponse:
+    ing = _ingredient(pk)
+    retailer = AppSettings.load().retailer
+    ctx = {
+        "ingredient": ing,
+        "preview": ingredients.preview(ing, request.GET.get("match", ""), retailer),
+        "retailer_label": Retailer(retailer).label,
+    }
+    return render(request, "core/partials/match_preview.html", ctx)
+
+
+@require_POST
+def ingredient_reset(request: HttpRequest, pk: int) -> HttpResponse:
+    ing = _ingredient(pk)
+    ingredients.reset_match(ing)
+    messages.success(request, f"Varumatchningen för {ing.name.lower()} återställdes.")
+    return redirect("ingredient_detail", pk=ing.pk)
+
+
+@require_POST
+def alias_add(request: HttpRequest, pk: int) -> HttpResponse:
+    ing = _ingredient(pk)
+    error = ingredients.add_alias(ing, request.POST.get("name", ""))
+    if _is_htmx(request):
+        return render(request, "core/partials/alias_list.html", _alias_ctx(ing, error))
+    if error:
+        messages.error(request, error)
+    return redirect("ingredient_detail", pk=ing.pk)
+
+
+@require_POST
+def alias_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    alias = get_object_or_404(IngredientAlias.objects.select_related("ingredient__category"), pk=pk)
+    ing = alias.ingredient
+    alias.delete()
+    if _is_htmx(request):
+        return render(request, "core/partials/alias_list.html", _alias_ctx(ing))
+    return redirect("ingredient_detail", pk=ing.pk)

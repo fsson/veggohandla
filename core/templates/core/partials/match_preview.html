@@ -1,0 +1,32 @@
+{% load vl %}
+{% if preview.error %}
+<p class="error">{{ preview.error }}</p>
+{% else %}
+<div class="card-head">
+  <h2>{{ preview.offers|length }}{% if preview.capped %}+{% endif %} varor matchar</h2>
+  <span class="small muted">Veganska varor med pris hos {{ retailer_label }}, billigast per förpackning först</span>
+</div>
+<p class="small muted" style="margin-bottom:8px">Regel: <code>{{ preview.rule }}</code></p>
+{% if preview.offers %}
+<ul class="offer-list">
+  {% for o in preview.offers %}{% with p=o.product %}
+  <li class="offer{% if forloop.first %} current{% endif %}">
+    {% if p.image_url %}<img class="thumbnail" src="{{ p.image_url }}" alt="" loading="lazy">{% else %}<span class="thumbnail">–</span>{% endif %}
+    <div style="min-width:0">
+      <div class="trunc"><strong>{{ p.name }}</strong> <span class="muted">{{ p.size_text }}</span></div>
+      <div class="tiny muted">{{ p.category_name }}{% if forloop.first %} · <span class="badge green">billigast</span>{% endif %}</div>
+    </div>
+    <div class="cost">{% if o.cost %}<strong>{{ o.cost|kr }}</strong>{% endif %}<span class="tiny muted">{% if p.price_per_kg %}{{ o.price.unit_price|kr }}/kg{% else %}{{ o.price.compare_price }}{% endif %}</span></div>
+    <a class="btn sm ghost" href="{{ p|product_url:'willys' }}" target="_blank" rel="noopener">visa</a>
+  </li>
+  {% endwith %}{% endfor %}
+</ul>
+{% if preview.capped %}<p class="small muted" style="margin-top:8px">Visar de första träffarna. Gör regeln mer exakt för att se alla.</p>{% endif %}
+{% else %}
+<div class="empty"><p>Inga veganska varor matchar regeln.</p></div>
+{% endif %}
+{% if preview.excluded %}
+<h3 style="margin:16px 0 6px">Utesluts av minusord ({{ preview.excluded|length }})</h3>
+<ul class="plain-list small muted">{% for p in preview.excluded %}<li><s>{{ p.name }}</s> {{ p.size_text }}</li>{% endfor %}</ul>
+{% endif %}
+{% endif %}

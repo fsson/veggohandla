@@ -53,6 +53,8 @@ class Ingredient(models.Model):
     package_unit = models.CharField("förp.enhet", max_length=4, choices=PACKAGE_UNITS, blank=True)
     # Which products in the index count as "this ingredient", see services/catalog.py.
     match = models.CharField("varumatchning", max_length=300, blank=True)
+    # True when the rule was changed on the ingredient page: `seed` then leaves it alone.
+    match_edited = models.BooleanField(default=False)
     # Chosen product (article code). Empty = the cheapest for the amount is picked automatically.
     preferred_code = models.CharField(max_length=40, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,25 @@
+{% if ingredients %}
+{% regroup ingredients by category as groups %}
+{% for g in groups %}
+<div class="shop-group">
+  <h2 style="margin-bottom:8px">{{ g.grouper.icon }} {{ g.grouper.name }}</h2>
+  <div class="card flush">
+  <table class="data-table">
+    <thead><tr><th>Ingrediens</th><th>Matchningsregel</th><th class="num hide-sm">Alias</th><th class="num hide-sm">Recept</th></tr></thead>
+    <tbody>
+    {% for ing in g.list %}
+    <tr>
+      <td><a class="link" href="{% url 'ingredient_detail' ing.pk %}"><strong>{{ ing.name }}</strong></a>{% if not ing.in_shopping_list %} <span class="badge">inte i inköpslistan</span>{% endif %}</td>
+      <td class="small">{% if ing.match %}<code>{{ ing.match }}</code>{% else %}<span class="muted">namnet</span>{% endif %}{% if ing.match_edited %} <span class="badge green">ändrad</span>{% endif %}</td>
+      <td class="num hide-sm">{{ ing.n_aliases }}</td>
+      <td class="num hide-sm">{{ ing.n_recipes }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card empty"><p>{% if q %}Ingen ingrediens matchar ”{{ q }}”.{% else %}Inga ingredienser än.{% endif %}</p></div>
+{% endif %}

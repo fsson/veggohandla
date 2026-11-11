@@ -699,3 +699,70 @@ def test_default_crawl_covers_all_food_but_no_non_food():
         "halsa-och-skonhet/halsokost",  # health food is food; hair care is not
     ]
     assert [s for s, _ in index.resolve_sections(tree, {"fryst": None})] == ["fryst/x"]
+
+
+# ------------------------------------------------------------ ingredient page
+
+
+def test_match_preview_shows_matches_cheapest_first_and_what_minus_words_exclude(seeded):
+    from core.services import ingredients
+
+    product("1", "Lök Gul 1kg", "frukt-och-gront/lok", "1kg", willys="14.90")
+    product("2", "Lök Gul Klass 1", "frukt-och-gront/lok", "500g", willys="9.90")
+    product("3", "Lök Gul Syltad", "frukt-och-gront/lok", "300g", willys="19.90")
+    product("4", "Lök Gul Kött", "frukt-och-gront/lok", "500g", willys="5.00", vegan=False)
+    ing = Ingredient.objects.get(name="Gul lök")
+
+    p = ingredients.preview(ing, "lök gul -syltad", "willys")
+    assert [o.product.code for o in p.offers] == ["2", "1"]  # cheapest first, never non-vegan
+    assert [x.code for x in p.excluded] == ["3"]
+    assert ingredients.preview(ing, "  ", "willys").rule == "Gul lök"  # empty = the name
+    assert ingredients.preview(ing, "-syltad", "willys").error
+    ing.refresh_from_db()
+    assert ing.match == "lök gul"  # previewing saves nothing
+
+
+def test_edited_match_survives_seeding_until_reset(seeded):
+    from core.services import ingredients
+
+    ing = Ingredient.objects.get(name="Gul lök")
+    ingredients.set_match(ing, "  lök   gul -stekt ")
+    call_command("seed", stdout=open("/dev/null", "w"))
+    ing.refresh_from_db()
+    assert ing.match == "lök gul -stekt" and ing.match_edited
+    ingredients.reset_match(ing)
+    ing.refresh_from_db()
+    assert ing.match == "lök gul" and not ing.match_edited
+
+
+def test_alias_must_be_unique_across_ingredients(seeded):
+    from core.services import ingredients
+    from core.services.recipes import find_ingredient
+
+    ing = Ingredient.objects.get(name="Gul lök")
+    assert "Rödlök" in ingredients.add_alias(ing, "röd lök")
+    assert "finns redan" in ingredients.add_alias(ing, "Gula lökar")
+    assert ingredients.add_alias(ing, "  Hacklök ") == ""
+    assert find_ingredient("hacklök") == ing
+
+
+def test_ingredient_pages(seeded, client):
+    ing = Ingredient.objects.get(name="Gul lök")
+    assert "Gul lök" in client.get("/ingredienser/").content.decode()
+    assert "Gul lök" not in client.get("/ingredienser/?q=vitlök", HTTP_HX_REQUEST="true").content.decode()
+    page = client.get(f"/ingredienser/{ing.pk}/").content.decode()
+    assert "Varuregel" in page and "Alias – namn i recept" in page and "gula lökar" in page
+    assert "varor matchar" in client.get(f"/ingredienser/{ing.pk}/forhandsvisning/?match=lök").content.decode()
+
+    client.post(f"/ingredienser/{ing.pk}/", {"match": "lök gul -stekt"})
+    ing.refresh_from_db()
+    assert ing.match == "lök gul -stekt" and ing.match_edited
+    client.post(f"/ingredienser/{ing.pk}/aterstall/")
+    ing.refresh_from_db()
+    assert ing.match == "lök gul" and not ing.match_edited
+
+    r = client.post(f"/ingredienser/{ing.pk}/alias/", {"name": "hacklök"}, HTTP_HX_REQUEST="true")
+    assert "hacklök" in r.content.decode()
+    alias = ing.aliases.get(name="hacklök")
+    client.post(f"/ingredienser/alias/{alias.pk}/ta-bort/", HTTP_HX_REQUEST="true")
+    assert not ing.aliases.filter(name="hacklök").exists()

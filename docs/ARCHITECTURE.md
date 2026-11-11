@@ -91,6 +91,7 @@ core/                The one Django app – everything of ours lives here
     catalog.py           Ingredient -> matching products -> cheapest for the amount
     shopping.py          Builds the shopping list; recipe cost
     recipes.py           Ingredient text -> recipe lines
+    ingredients.py       The ingredient page: preview/save match rules, aliases
     importer.py          Import a recipe from a web page (schema.org JSON-LD)
     images.py            Shrink uploaded/imported recipe images
     index.py             Builds the local product index
@@ -218,10 +219,15 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
     outside the window, and a running index pauses and continues next time. An
     ingredient list is fetched once per product, those matching an ingredient first.
     Errors only abort the indexing. The pace is fixed in code and not configurable.
-11. **Nothing in the app edits ingredients.** Section, conversion facts and product
-    matching come from the seed data; new ingredients from recipe text get a section
-    according to where the index's products with the same name are. Django admin exists
-    for exceptional cases.
+11. **Product matching and aliases can be edited in the app, with a preview.** The
+    ingredient page (`services/ingredients.py`) shows which vegan products a rule matches,
+    cheapest first, and which ones a `-word` keeps out, before anything is saved. A saved
+    rule sets `match_edited`, so `seed` no longer overwrites it; "Återställ standard" goes back
+    to the seed rule. Aliases must be unique across all ingredient names and aliases (exact
+    matching), and apply to recipe text entered from then on. Section and conversion facts
+    still come from the seed data; new ingredients from recipe text get a section according
+    to where the index's products with the same name are. Django admin exists for
+    exceptional cases.
 12. **Personal use only.** Willys' terms allow use of the content "endast för ditt
     personliga bruk" (only for your personal use). Therefore each person runs their own
     local instance with their own index; the app must not be operated as a shared or public
@@ -266,5 +272,3 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
 - **Price history:** add a `PriceObservation` table filled on every indexing run.
 - **Pantry:** "already at home" exists per week; a real inventory would be its own model
   deducted in `services/shopping.build`.
-- **Edit product matching in the app:** a field for `Ingredient.match` with a preview of
-  the matching products (`catalog.candidates`).

@@ -321,3 +321,6 @@ dialog[open] #dialog-content { display: flex; flex-direction: column; max-height
   .with-aside { display: block; }
   body { background: #fff; }
 }
+
+/* ------------------------------------------------------------ ingredient page */
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .84em; background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }

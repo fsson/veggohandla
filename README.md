@@ -15,6 +15,8 @@ prices from Willys and Hemköp, two Swedish supermarket chains.
   product for exactly the amount you need (750 g of vegobullar → one 900 g bag instead of
   three small ones). Promotions are included. If you want a particular brand, press *Swap* –
   the choice is remembered. The same products are compared between Willys and Hemköp.
+- **Ingredients** – see which products each ingredient matches, change the rule with a live
+  preview, and add alternative names (aliases) that recipe text should recognise.
 - **Products** – a local index of the chains' food products. Only vegan products are shown:
   labelled vegan by the chain, or with an ingredient list free of animal ingredients.
 
@@ -106,7 +108,9 @@ for example [PiVPN](https://pivpn.io) with WireGuard.
 
 Each ingredient has a rule for which products count as it, e.g.
 `krossade tomat -chili -vitlök` (all words must be in the product name, `-word` excludes).
-The rules live in `core/seed_data.py`. Among the matching products, the one that is cheapest
+The default rules live in `core/seed_data.py`; you can change any rule on the ingredient's page
+(*Ingredienser*), where a preview shows the matching products before you save. Your changes are
+kept when the seed data is re-applied, until you press *Återställ standard*. Among the matching products, the one that is cheapest
 for the amount is picked, counting whole packages, loose weight per kg and promotions like
 "2 för 46 kr" (only if you buy at least 2).
 
