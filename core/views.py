@@ -21,6 +21,7 @@ from core.domain.parse import parse_line
 from core.forms import RecipeForm
 from core.models import (
     AppSettings,
+    Category,
     ExtraItem,
     Ingredient,
     IngredientAlias,
@@ -622,8 +623,8 @@ def _ingredient(pk: int) -> Ingredient:
     return get_object_or_404(Ingredient.objects.select_related("category"), pk=pk)
 
 
-def _alias_ctx(ing: Ingredient, error: str = "") -> dict:
-    return {"ingredient": ing, "aliases": ing.aliases.order_by("name"), "alias_error": error}
+def _alias_ctx(ing: Ingredient, error: str = "", merge_from: Ingredient | None = None) -> dict:
+    return {"ingredient": ing, "aliases": ing.aliases.order_by("name"), "alias_error": error, "merge_from": merge_from}
 
 
 def ingredient_detail(request: HttpRequest, pk: int) -> HttpResponse:
@@ -640,6 +641,8 @@ def ingredient_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "store_categories": (ing.category.store_categories or "").split(),
         "recipes": Recipe.objects.filter(ingredients__ingredient=ing).distinct().order_by("name"),
         "retailer_label": Retailer(retailer).label,
+        "others": Ingredient.objects.exclude(pk=ing.pk).order_by("name").values_list("name", flat=True),
+        "categories": Category.objects.all(),
     }
     return render(request, "core/ingredient_detail.html", ctx)
 
@@ -666,9 +669,13 @@ def ingredient_reset(request: HttpRequest, pk: int) -> HttpResponse:
 @require_POST
 def alias_add(request: HttpRequest, pk: int) -> HttpResponse:
     ing = _ingredient(pk)
-    error = ingredients.add_alias(ing, request.POST.get("name", ""))
+    name = request.POST.get("name", "")
+    error = ingredients.add_alias(ing, name)
     if _is_htmx(request):
-        return render(request, "core/partials/alias_list.html", _alias_ctx(ing, error))
+        # The name is another ingredient of its own (e.g. created from a recipe): offer to merge it.
+        other = ingredients.named(name) if error else None
+        merge_from = other if other and other != ing else None
+        return render(request, "core/partials/alias_list.html", _alias_ctx(ing, error, merge_from))
     if error:
         messages.error(request, error)
     return redirect("ingredient_detail", pk=ing.pk)
@@ -682,3 +689,40 @@ def alias_delete(request: HttpRequest, pk: int) -> HttpResponse:
     if _is_htmx(request):
         return render(request, "core/partials/alias_list.html", _alias_ctx(ing))
     return redirect("ingredient_detail", pk=ing.pk)
+
+
+@require_POST
+def ingredient_section(request: HttpRequest, pk: int) -> HttpResponse:
+    """Move the ingredient to another shopping-list section (when the automatic guess was wrong)."""
+    ing = _ingredient(pk)
+    category = get_object_or_404(Category, pk=request.POST.get("category") or 0)
+    ingredients.set_section(ing, category)
+    messages.success(request, f"{ing.name} ligger nu under {category.name}.")
+    return redirect("ingredient_detail", pk=ing.pk)
+
+
+@require_POST
+def ingredient_merge(request: HttpRequest, pk: int) -> HttpResponse:
+    """Merge this ingredient into the one named in `into`; its name becomes an alias there."""
+    ing = _ingredient(pk)
+    into = request.POST.get("into", "")
+    target = ingredients.named(into)
+    if not target or target == ing:
+        messages.error(request, f"Hittade ingen annan ingrediens som heter ”{into.strip()}”.")
+        return redirect("ingredient_detail", pk=ing.pk)
+    name = ing.name
+    ingredients.merge(ing, target)
+    messages.success(request, f"{name} slogs ihop med {target.name} och är nu ett alias.")
+    return redirect("ingredient_detail", pk=target.pk)
+
+
+@require_POST
+def ingredient_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    ing = _ingredient(pk)
+    name = ing.name
+    error = ingredients.delete(ing)
+    if error:
+        messages.error(request, error)
+        return redirect("ingredient_detail", pk=pk)
+    messages.success(request, f"{name} togs bort.")
+    return redirect("ingredient_list")

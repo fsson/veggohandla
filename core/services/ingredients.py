@@ -1,4 +1,5 @@
-"""The ingredient page: see and change which products an ingredient matches, and its aliases.
+"""The ingredient page: see and change which products an ingredient matches, its aliases,
+and merge duplicates ("gulcurry" created from a recipe when "Curry" already existed).
 
 A match rule is previewed before it is saved, so the effect of every word is visible:
 which vegan products it picks up, and which ones a `-word` keeps out.
@@ -9,8 +10,11 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass, field
 
+from django.db import transaction
+from django.db.models.functions import Lower
+
 from core import seed_data
-from core.models import Ingredient, IngredientAlias, Product
+from core.models import Category, Ingredient, IngredientAlias, Product, RecipeIngredient, ShoppingItemState
 from core.services import catalog
 from core.services.recipes import resolve
 
@@ -81,4 +85,42 @@ def add_alias(ingredient: Ingredient, name: str) -> str:
     if taken:
         return f"”{name}” används redan av {taken.name}." if taken != ingredient else f"”{name}” finns redan."
     IngredientAlias.objects.create(ingredient=ingredient, name=name[:80])
+    return ""
+
+
+def set_section(ingredient: Ingredient, category: Category) -> None:
+    """Set the shopping-list section. It also decides where a rule without @ looks for products."""
+    ingredient.category = category
+    ingredient.save(update_fields=["category"])
+
+
+def named(name: str) -> Ingredient | None:
+    """The ingredient whose own name (not an alias) is `name`."""
+    key = " ".join((name or "").split()).lower()
+    return Ingredient.objects.annotate(lname=Lower("name")).filter(lname=key).first()
+
+
+@transaction.atomic
+def merge(source: Ingredient, target: Ingredient) -> None:
+    """Make `source` part of `target`: recipes use `target`, and the name becomes an alias.
+
+    Recipe lines keep their amounts and notes. `target` keeps its rule and chosen product.
+    """
+    if source.pk == target.pk:
+        raise ValueError("cannot merge an ingredient into itself")
+    RecipeIngredient.objects.filter(ingredient=source).update(ingredient=target)
+    # Shopping list changes ("already at home") follow, unless the week already has one for target.
+    taken = ShoppingItemState.objects.filter(ingredient=target).values("week")
+    ShoppingItemState.objects.filter(ingredient=source).exclude(week__in=taken).update(ingredient=target)
+    source.aliases.update(ingredient=target)
+    name = source.name.lower()
+    source.delete()  # cascades the shopping states left behind
+    IngredientAlias.objects.create(ingredient=target, name=name)
+
+
+def delete(ingredient: Ingredient) -> str:
+    """Delete an ingredient no recipe uses. Returns an error message, or "" when deleted."""
+    if ingredient.uses.exists():
+        return f"{ingredient.name} används i recept – slå ihop den med en annan ingrediens i stället."
+    ingredient.delete()
     return ""

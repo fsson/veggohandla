@@ -10,6 +10,7 @@ from core.models import (
     Category,
     ExtraItem,
     Ingredient,
+    IngredientAlias,
     PlannedMeal,
     Price,
     Product,
@@ -766,6 +767,75 @@ def test_ingredient_pages(seeded, client):
     alias = ing.aliases.get(name="hacklök")
     client.post(f"/ingredienser/alias/{alias.pk}/ta-bort/", HTTP_HX_REQUEST="true")
     assert not ing.aliases.filter(name="hacklök").exists()
+
+
+def test_merge_moves_recipes_aliases_and_shopping_state_and_keeps_the_name_as_alias(seeded):
+    from core.services import ingredients
+
+    curry = Ingredient.objects.get(name="Curry")
+    recipe = Recipe.objects.create(name="Gul gryta", servings=4)
+    set_ingredients_from_text(recipe, "2 tsk gulcurry, rostad")
+    dup = find_ingredient("gulcurry")
+    assert dup != curry
+    IngredientAlias.objects.create(ingredient=dup, name="gul currypulver")
+    monday = dt.date(2026, 11, 9)
+    ShoppingItemState.objects.create(week=monday, ingredient=dup, removed=True)
+
+    ingredients.merge(dup, curry)
+
+    assert not Ingredient.objects.filter(pk=dup.pk).exists()
+    line = recipe.ingredients.get()
+    assert line.ingredient == curry and line.note == "rostad" and line.quantity == D(2)
+    assert find_ingredient("gulcurry") == curry and find_ingredient("gul currypulver") == curry
+    assert ShoppingItemState.objects.get(week=monday).ingredient == curry
+    call_command("seed", stdout=open("/dev/null", "w"))
+    assert find_ingredient("gulcurry") == curry  # seeding doesn't bring the duplicate back
+
+
+def test_merge_and_delete_pages(seeded, client):
+    curry = Ingredient.objects.get(name="Curry")
+    recipe = Recipe.objects.create(name="Gul gryta", servings=4)
+    set_ingredients_from_text(recipe, "2 tsk gulcurry")
+    dup = find_ingredient("gulcurry")
+
+    # Adding the duplicate's name as an alias offers to merge it instead of only failing.
+    r = client.post(f"/ingredienser/{curry.pk}/alias/", {"name": "Gulcurry"}, HTTP_HX_REQUEST="true").content.decode()
+    assert f"/ingredienser/{dup.pk}/sla-ihop/" in r
+    assert "Slå ihop" in client.get(f"/ingredienser/{dup.pk}/").content.decode()
+
+    assert client.post(f"/ingredienser/{dup.pk}/ta-bort/").status_code == 302
+    assert Ingredient.objects.filter(pk=dup.pk).exists()  # in use: not deleted
+
+    r = client.post(f"/ingredienser/{dup.pk}/sla-ihop/", {"into": "finns inte"})
+    assert Ingredient.objects.filter(pk=dup.pk).exists()
+    r = client.post(f"/ingredienser/{dup.pk}/sla-ihop/", {"into": " curry "})
+    assert r.url == f"/ingredienser/{curry.pk}/"
+    assert recipe.ingredients.get().ingredient == curry and find_ingredient("gulcurry") == curry
+
+    unused = Ingredient.objects.create(name="Testkrydda", category=curry.category)
+    assert client.post(f"/ingredienser/{unused.pk}/ta-bort/").url == "/ingredienser/"
+    assert not Ingredient.objects.filter(pk=unused.pk).exists()
+
+
+def test_section_can_be_changed_and_survives_seeding(seeded, client):
+    recipe = Recipe.objects.create(name="Gul gryta", servings=4)
+    set_ingredients_from_text(recipe, "2 tsk gulcurry")
+    ing = find_ingredient("gulcurry")
+    spices = Category.objects.get(name="Kryddor")
+    assert ing.category != spices  # no product is called "gulcurry": the guess falls back
+
+    page = client.get(f"/ingredienser/{ing.pk}/").content.decode()
+    assert "Avdelning" in page and f'value="{spices.pk}"' in page
+    client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": spices.pk})
+    ing.refresh_from_db()
+    assert ing.category == spices
+    assert client.post(f"/ingredienser/{ing.pk}/avdelning/", {"category": 99999}).status_code == 404
+
+    seed_ing = Ingredient.objects.get(name="Gul lök")
+    client.post(f"/ingredienser/{seed_ing.pk}/avdelning/", {"category": spices.pk})
+    call_command("seed", stdout=open("/dev/null", "w"))
+    seed_ing.refresh_from_db()
+    assert seed_ing.category == spices  # seeding never moves an existing ingredient
 
 
 # ------------------------------------------------------------ products page filters

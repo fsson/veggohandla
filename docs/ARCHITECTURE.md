@@ -91,7 +91,7 @@ core/                The one Django app – everything of ours lives here
     catalog.py           Ingredient -> matching products -> cheapest for the amount
     shopping.py          Builds the shopping list; recipe cost
     recipes.py           Ingredient text -> recipe lines
-    ingredients.py       The ingredient page: preview/save match rules, aliases
+    ingredients.py       The ingredient page: preview/save match rules, aliases, merge
     importer.py          Import a recipe from a web page (schema.org JSON-LD)
     images.py            Shrink uploaded/imported recipe images
     index.py             Builds the local product index
@@ -224,9 +224,14 @@ ExtraItem (week: product from the index + count)    AppSettings (chain, last ser
     cheapest first, and which ones a `-word` keeps out, before anything is saved. A saved
     rule sets `match_edited`, so `seed` no longer overwrites it; "Återställ standard" goes back
     to the seed rule. Aliases must be unique across all ingredient names and aliases (exact
-    matching), and apply to recipe text entered from then on. Section and conversion facts
-    still come from the seed data; new ingredients from recipe text get a section according
-    to where the index's products with the same name are. Django admin exists for
+    matching), and apply to recipe text entered from then on. A duplicate created from
+    recipe text ("gulcurry" next to "Curry") is fixed by merging: its recipe lines and
+    aliases move to the other ingredient and its name becomes an alias there, so neither
+    new recipe text nor `seed` recreates it. Only unused ingredients can be deleted. The section can be
+    changed on the page too (seed never moves an existing ingredient). Conversion facts
+    still come from the seed data. New ingredients from recipe text get a guessed section,
+    from where the index's products with the same name are (`guess_category`, Övrigt when
+    nothing matches). Django admin exists for
     exceptional cases.
 12. **Personal use only.** Willys' terms allow use of the content "endast för ditt
     personliga bruk" (only for your personal use). Therefore each person runs their own

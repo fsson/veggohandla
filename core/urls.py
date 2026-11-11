@@ -40,6 +40,9 @@ urlpatterns = [
     path("ingredienser/<int:pk>/forhandsvisning/", v.match_preview, name="match_preview"),
     path("ingredienser/<int:pk>/aterstall/", v.ingredient_reset, name="ingredient_reset"),
     path("ingredienser/<int:pk>/alias/", v.alias_add, name="alias_add"),
+    path("ingredienser/<int:pk>/avdelning/", v.ingredient_section, name="ingredient_section"),
+    path("ingredienser/<int:pk>/sla-ihop/", v.ingredient_merge, name="ingredient_merge"),
+    path("ingredienser/<int:pk>/ta-bort/", v.ingredient_delete, name="ingredient_delete"),
     path("ingredienser/alias/<int:pk>/ta-bort/", v.alias_delete, name="alias_delete"),
     # Range (sortiment)
     path("sortiment/", v.products_view, name="products"),

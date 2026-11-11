@@ -16,7 +16,8 @@ prices from Willys and Hemköp, two Swedish supermarket chains.
   three small ones). Promotions are included. If you want a particular brand, press *Swap* –
   the choice is remembered. The same products are compared between Willys and Hemköp.
 - **Ingredients** – see which products each ingredient matches, change the rule with a live
-  preview, and add alternative names (aliases) that recipe text should recognise.
+  preview, add alternative names (aliases) that recipe text should recognise, and merge
+  duplicates (the duplicate's recipes move over and its name becomes an alias).
 - **Products** – a local index of the chains' food products. Only vegan products are shown:
   labelled vegan by the chain, or with an ingredient list free of animal ingredients.
 

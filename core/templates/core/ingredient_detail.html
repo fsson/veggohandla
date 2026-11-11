@@ -45,12 +45,40 @@
   </div>
 
   <aside class="aside">
+    <div class="card">
+      <h2 style="margin-bottom:4px">Avdelning</h2>
+      <p class="small muted" style="margin-bottom:10px">Var {{ ingredient.name|lower }} hamnar i inköpslistan. Avgör också var varuregeln söker när den saknar @.</p>
+      <form method="post" action="{% url 'ingredient_section' ingredient.pk %}" class="row">{% csrf_token %}
+        <select name="category" aria-label="Avdelning" class="grow">
+          {% for c in categories %}<option value="{{ c.pk }}"{% if c.pk == ingredient.category_id %} selected{% endif %}>{{ c.icon }} {{ c.name }}</option>{% endfor %}
+        </select>
+        <button class="btn sm soft">Spara</button>
+      </form>
+    </div>
     <div class="card" id="alias-list">{% include "core/partials/alias_list.html" %}</div>
     <div class="card">
       <h2 style="margin-bottom:8px">Används i</h2>
       {% if recipes %}
       <ul class="plain-list">{% for r in recipes %}<li><a class="link" href="{% url 'recipe_detail' r.pk %}">{{ r.name }}</a></li>{% endfor %}</ul>
       {% else %}<p class="small muted">Inga recept.</p>{% endif %}
+    </div>
+    <div class="card">
+      <h2 style="margin-bottom:4px">Dubblett?</h2>
+      <p class="small muted" style="margin-bottom:10px">Är {{ ingredient.name|lower }} samma sak som en annan ingrediens?
+        Slå ihop dem: recepten flyttas dit och ”{{ ingredient.name|lower }}” blir ett alias där.</p>
+      <form method="post" action="{% url 'ingredient_merge' ingredient.pk %}" class="row"
+        data-confirm="Slå ihop {{ ingredient.name|lower }} med den valda ingrediensen? {{ ingredient.name }} försvinner som egen ingrediens.">{% csrf_token %}
+        <input type="text" name="into" list="other-ingredients" placeholder="Annan ingrediens" aria-label="Slå ihop med" class="grow" required autocomplete="off">
+        <datalist id="other-ingredients">{% for n in others %}<option value="{{ n }}">{% endfor %}</datalist>
+        <button class="btn sm soft">Slå ihop</button>
+      </form>
+      {% if not recipes %}
+      <form method="post" action="{% url 'ingredient_delete' ingredient.pk %}" style="margin-top:12px"
+        data-confirm="Ta bort {{ ingredient.name|lower }}?">{% csrf_token %}
+        <button class="btn sm ghost danger">Ta bort {{ ingredient.name|lower }}</button>
+      </form>
+      {% if seed_rule is not None %}<p class="tiny muted" style="margin-top:6px">En standardingrediens kommer tillbaka nästa gång standarddata läses in.</p>{% endif %}
+      {% endif %}
     </div>
   </aside>
 </div>

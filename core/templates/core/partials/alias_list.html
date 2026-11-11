@@ -16,5 +16,15 @@
   <input type="text" name="name" placeholder="Nytt alias" aria-label="Nytt alias" class="grow">
   <button class="btn sm soft">Lägg till</button>
 </form>
-{% if alias_error %}<p class="error small" style="margin-top:6px">{{ alias_error }}</p>{% endif %}
+{% if merge_from %}
+<div class="msg" style="margin-top:8px">
+  <p class="small">”{{ merge_from.name|lower }}” är en egen ingrediens{% if merge_from.uses.exists %} som används i recept{% endif %}.
+    Slå ihop den med {{ ingredient.name|lower }}? Recepten flyttas hit och ”{{ merge_from.name|lower }}” blir ett alias.</p>
+  <form method="post" action="{% url 'ingredient_merge' merge_from.pk %}" class="row" style="margin-top:6px">{% csrf_token %}
+    <input type="hidden" name="into" value="{{ ingredient.name }}">
+    <button class="btn sm primary">Slå ihop</button>
+    <a class="link small" href="{% url 'ingredient_detail' merge_from.pk %}">Visa {{ merge_from.name|lower }}</a>
+  </form>
+</div>
+{% elif alias_error %}<p class="error small" style="margin-top:6px">{{ alias_error }}</p>{% endif %}
 <p class="tiny muted" style="margin-top:8px">Gäller recepttext du skriver eller sparar härefter.</p>
