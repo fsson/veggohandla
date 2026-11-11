@@ -6,18 +6,18 @@ from core.services import index
 
 
 class Command(BaseCommand):
-    help = "Hämtar sortiment och priser från Willys och Hemköp och granskar nya varor (veganskt)."
+    help = "Fetch products and prices from Willys and Hemköp and vet new products (vegan check)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--prices-only", action="store_true", help="Hoppa över granskning av nya varor.")
-        parser.add_argument("--reclassify", action="store_true", help="Kör bara om vegankontrollen lokalt.")
+        parser.add_argument("--prices-only", action="store_true", help="Skip vetting new products.")
+        parser.add_argument("--reclassify", action="store_true", help="Only re-run the vegan check locally.")
         parser.add_argument(
-            "--refresh-listings", action="store_true", help="Hämta listningar och priser igen även om de är färska."
+            "--refresh-listings", action="store_true", help="Fetch listings and prices again even if they are fresh."
         )
 
     def handle(self, *args, **opts):
         if opts["reclassify"]:
-            self.stdout.write(f"Ändrade: {index.reclassify()}")
+            self.stdout.write(f"Changed: {index.reclassify()}")
             return
         from django.utils import timezone
 
@@ -26,8 +26,8 @@ class Command(BaseCommand):
         if not axfood.in_visit_time():
             nxt = timezone.localtime(axfood.next_visit_time())
             self.stderr.write(
-                "Willys och Hemköp ber (robots.txt) om att bara bli besökta 04:00–08:45 UTC. "
-                f"Nästa tillfälle: {nxt:%Y-%m-%d %H:%M}. Tips: schemalägg kommandot med cron."
+                "Willys and Hemköp ask (robots.txt) to be visited only 04:00–08:45 UTC. "
+                f"Next opportunity: {nxt:%Y-%m-%d %H:%M}. Tip: schedule the command with cron."
             )
             return
         try:
@@ -37,6 +37,6 @@ class Command(BaseCommand):
                 force_listings=opts["refresh_listings"],
             )
         except index.AlreadyRunning:
-            self.stderr.write("En uppdatering pågår redan (t.ex. den automatiska i `manage.py serve`).")
+            self.stderr.write("An update is already running (e.g. the automatic one in `manage.py serve`).")
             return
         self.stdout.write(self.style.SUCCESS(summary))

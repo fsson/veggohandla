@@ -50,18 +50,18 @@ def tick(state: State, now: dt.datetime | None = None) -> str | None:
     now = now or timezone.now()
     if not due(now, state):
         return None
-    log.info("Startar automatisk uppdatering av sortimentet")
+    log.info("Starting automatic product index refresh")
     try:
         summary = index.run()
     except (axfood.OutsideVisitTime, index.AlreadyRunning):
         return None
     except Exception:
         # Store errors and anything unexpected: log, back off, try again later.
-        log.exception("Automatisk uppdatering misslyckades")
+        log.exception("Automatic refresh failed")
         state.last_failure = now
         return None
     state.last_failure = None
-    log.info("Automatisk uppdatering klar: %s", summary)
+    log.info("Automatic refresh done: %s", summary)
     return summary
 
 

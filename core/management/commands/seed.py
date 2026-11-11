@@ -11,14 +11,14 @@ from core.services.recipes import find_ingredient, set_ingredients_from_text
 
 
 class Command(BaseCommand):
-    help = "Lägger in avdelningar, ingredienser och veganska exempelrecept (hoppar över det som finns)."
+    help = "Add sections, ingredients and vegan example recipes (skips what already exists)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--no-recipes", action="store_true", help="Lägg bara in ingredienser.")
+        parser.add_argument("--no-recipes", action="store_true", help="Only add ingredients.")
 
     def handle(self, *args, **opts):
         new_ing, new_rec = self._seed(opts)
-        self.stdout.write(self.style.SUCCESS(f"Klart: {new_ing} nya ingredienser, {new_rec} nya recept."))
+        self.stdout.write(self.style.SUCCESS(f"Done: {new_ing} new ingredients, {new_rec} new recipes."))
 
     @transaction.atomic
     def _seed(self, opts) -> tuple[int, int]:
@@ -72,7 +72,7 @@ class Command(BaseCommand):
                 )
                 created = set_ingredients_from_text(recipe, r["ingredients"])
                 if created:
-                    self.stderr.write(f"Varning: {r['name']} skapade nya ingredienser: {[i.name for i in created]}")
+                    self.stderr.write(f"Warning: {r['name']} created new ingredients: {[i.name for i in created]}")
                 new_rec += 1
 
         return new_ing, new_rec

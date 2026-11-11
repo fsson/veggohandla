@@ -74,7 +74,7 @@ def scale(quantity: Decimal | None, recipe_servings: int, planned_servings: int)
     if quantity is None:
         return None
     if recipe_servings <= 0:
-        raise ValueError("Receptets portioner måste vara positivt")
+        raise ValueError("Recipe servings must be positive")
     return quantity * Decimal(planned_servings) / Decimal(recipe_servings)
 
 

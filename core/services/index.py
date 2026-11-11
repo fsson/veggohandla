@@ -332,7 +332,7 @@ def start_background() -> bool:
             except (axfood.OutsideVisitTime, AlreadyRunning):
                 pass
             except Exception as e:  # noqa: BLE001 – the thread must never die silently
-                log.exception("Indexeringen misslyckades")
+                log.exception("Indexing failed")
                 AppSettings.objects.filter(pk=1).update(index_error=str(e)[:300], index_running=False)
             finally:
                 close_old_connections()
